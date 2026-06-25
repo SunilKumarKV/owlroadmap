@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button, Textarea } from '@/components';
+import { useState } from 'react';
+import Button from '@/components/Button';
+import Textarea from '@/components/Textarea';
 
-const ExportCenterPage: React.FC = () => {
+const ExportCenterPage = () => {
   const [markdown, setMarkdown] = useState('');
 
   return (

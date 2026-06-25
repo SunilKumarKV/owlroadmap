@@ -1,9 +1,10 @@
 "use client";
 
-import React from 'react';
-import { Button, RadioGroup } from '@/components';
+import { useState } from 'react';
+import Button from '@/components/Button';
+import RadioGroup from '@/components/RadioGroup';
 
-const ThemeSelectorPage: React.FC = () => {
+const ThemeSelectorPage = () => {
   const [theme, setTheme] = useState('minimal');
 
   return (

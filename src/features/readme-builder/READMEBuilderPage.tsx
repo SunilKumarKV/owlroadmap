@@ -1,12 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Button } from '@/components';
-import { Input } from '@/components';
-import { Textarea } from '@/components';
-import { useReadmeStore } from '@/store/readme';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Textarea from '@/components/Textarea';
+import useReadmeStore from '@/stores/readme-store';
 
-const READMEBuilderPage: React.FC = () => {
+const READMEBuilderPage = () => {
   const { name, role, about, skills, projects, socials, setName, setRole, setAbout, setSkills, setProjects, setSocials } = useReadmeStore();
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-[#1e1e1e]">

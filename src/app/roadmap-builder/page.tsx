@@ -1,7 +1,6 @@
-import React from 'react';
-import RoadmapBuilderPage from '@/features/roadmap-builder/RoadmapBuilderPage';
+import RoadmapBuilderPage from '@/features/readme-builder/RoadmapBuilderPage';
 
-const RoadmapBuilder: React.FC = () => {
+const RoadmapBuilder = () => {
   return <RoadmapBuilderPage />;
 };
 

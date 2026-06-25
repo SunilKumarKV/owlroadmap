@@ -1,5 +1,4 @@
-import React from 'react';
-import clsx from 'clsx';
+import type { FC } from 'react';
 
 interface RadioOption {
   value: string;
@@ -7,16 +6,19 @@ interface RadioOption {
 }
 
 interface RadioGroupProps {
-  options: RadioOption[];
+  options: Array<string | RadioOption>;
   value: string;
   onChange: (value: string) => void;
   labels?: { [key: string]: string };
+  className?: string;
 }
 
-const RadioGroup: React.FC<RadioGroupProps> = ({ options, value, onChange, labels }) => {
+const RadioGroup: FC<RadioGroupProps> = ({ options, value, onChange, labels, className }) => {
+  const normalizedOptions = options.map((option) => typeof option === 'string' ? { value: option, label: option } : option);
+
   return (
-    <div className="flex flex-col space-y-2">
-      {options.map((option) => (
+    <div className={['flex flex-col space-y-2', className].filter(Boolean).join(' ')}>
+      {normalizedOptions.map((option) => (
         <label key={option.value} className="flex items-center space-x-2">
           <input
             type="radio"

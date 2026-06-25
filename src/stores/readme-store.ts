@@ -1,5 +1,7 @@
-import create from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+
+type READMEField = 'name' | 'role' | 'about' | 'skills' | 'projects' | 'socials';
 
 interface READMEState {
   name: string;
@@ -8,22 +10,34 @@ interface READMEState {
   skills: string;
   projects: string;
   socials: string;
-  setField: (field: keyof READMEState, value: string) => void;
+  setField: (field: READMEField, value: string) => void;
+  setName: (value: string) => void;
+  setRole: (value: string) => void;
+  setAbout: (value: string) => void;
+  setSkills: (value: string) => void;
+  setProjects: (value: string) => void;
+  setSocials: (value: string) => void;
 }
 
-const useREADMEStore = create<persist<READMEState>>(persist(
-  (set) => ({
-    name: '',
-    role: '',
-    about: '',
-    skills: '',
-    projects: '',
-    socials: '',
-    setField: (field, value) => set({ [field]: value }),
-  }),
-  {
-    name: 'readme-store',
-  }
-));
+const useREADMEStore = create<READMEState>()(
+  persist(
+    (set) => ({
+      name: '',
+      role: '',
+      about: '',
+      skills: '',
+      projects: '',
+      socials: '',
+      setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
+      setName: (value) => set({ name: value }),
+      setRole: (value) => set({ role: value }),
+      setAbout: (value) => set({ about: value }),
+      setSkills: (value) => set({ skills: value }),
+      setProjects: (value) => set({ projects: value }),
+      setSocials: (value) => set({ socials: value }),
+    }),
+    { name: 'readme-store' }
+  )
+);
 
 export default useREADMEStore;

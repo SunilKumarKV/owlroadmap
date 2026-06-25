@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Button, Input, Textarea } from '@/components';
+import { useState } from 'react';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import Textarea from '@/components/Textarea';
 
-const RoadmapBuilderPage: React.FC = () => {
+const RoadmapBuilderPage = () => {
   const [title, setTitle] = useState('');
   const [steps, setSteps] = useState<string[]>([]);
 
