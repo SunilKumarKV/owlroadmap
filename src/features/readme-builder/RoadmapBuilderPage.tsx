@@ -1,13 +1,22 @@
 "use client";
 
-import { useState } from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Textarea from '@/components/Textarea';
+import useRoadmapStore from '@/stores/roadmap-store';
 
 const RoadmapBuilderPage = () => {
-  const [title, setTitle] = useState('');
-  const [steps, setSteps] = useState<string[]>([]);
+  const { title, steps, setField } = useRoadmapStore();
+
+  const handleAddStep = () => {
+    setField('steps', [...steps, '']);
+  };
+
+  const handleStepChange = (index: number, value: string) => {
+    const newSteps = [...steps];
+    newSteps[index] = value;
+    setField('steps', newSteps);
+  };
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-gray-100 dark:bg-[#1e1e1e]">
@@ -15,27 +24,23 @@ const RoadmapBuilderPage = () => {
       <form className="space-y-4">
         <Input
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => setField('title', e.target.value)}
           placeholder="Roadmap Title"
         />
         {steps.map((step, index) => (
           <div key={index} className="flex space-x-2 items-center">
             <Textarea
               value={step}
-              onChange={(e) => {
-                const newSteps = [...steps];
-                newSteps[index] = e.target.value;
-                setSteps(newSteps);
-              }}
+              onChange={(e) => handleStepChange(index, e.target.value)}
               placeholder={`Step ${index + 1}`}
             />
           </div>
         ))}
-        <Button onClick={() => setSteps([...steps, ''])} variant="secondary">Add Step</Button>
+        <Button onClick={handleAddStep} variant="secondary">Add Step</Button>
       </form>
       <div className="flex space-x-4 mt-8">
         <Button href="/readme-builder" variant="secondary">Create README</Button>
-        <Button onClick={() => alert('Preview Roadmap.md')} variant="primary">Preview Markdown</Button>
+        <Button href="/preview" variant="primary">Preview Markdown</Button>
       </div>
     </div>
   );

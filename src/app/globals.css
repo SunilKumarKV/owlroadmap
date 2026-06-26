@@ -22,5 +22,186 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Theme system variables */
+body.theme-minimal {
+  --background: #f9fafb;
+  --foreground: #111827;
+  --card-bg: #ffffff;
+  --border-color: #e5e7eb;
+}
+
+body.theme-dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --card-bg: #121212;
+  --border-color: #262626;
+}
+
+body.theme-gradient {
+  --background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+  --foreground: #f8fafc;
+  --card-bg: rgba(15, 23, 42, 0.6);
+  --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.theme-terminal {
+  --background: #000000;
+  --foreground: #39ff14; /* Neon green */
+  --card-bg: #050505;
+  --border-color: #39ff14;
+}
+
+/* Global Overrides when custom themes are active */
+body.theme-minimal,
+body.theme-dark,
+body.theme-gradient,
+body.theme-terminal {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+/* If gradient theme is active, background body with gradient */
+body.theme-gradient {
+  background-attachment: fixed !important;
+}
+
+/* Force hardcoded container backgrounds to respect our themes */
+body.theme-minimal .bg-gray-100,
+body.theme-dark .bg-gray-100,
+body.theme-gradient .bg-gray-100,
+body.theme-terminal .bg-gray-100 {
+  background: transparent !important;
+}
+
+body.theme-minimal .dark\:bg-\[\#1e1e1e\],
+body.theme-dark .dark\:bg-\[\#1e1e1e\],
+body.theme-gradient .dark\:bg-\[\#1e1e1e\],
+body.theme-terminal .dark\:bg-\[\#1e1e1e\] {
+  background: transparent !important;
+}
+
+/* Text elements */
+body.theme-minimal h1,
+body.theme-dark h1,
+body.theme-gradient h1,
+body.theme-terminal h1 {
+  color: var(--foreground) !important;
+}
+
+body.theme-minimal label,
+body.theme-dark label,
+body.theme-gradient label,
+body.theme-terminal label {
+  color: var(--foreground) !important;
+}
+
+/* Inputs and Textareas */
+body.theme-minimal textarea, body.theme-minimal input,
+body.theme-dark textarea, body.theme-dark input,
+body.theme-gradient textarea, body.theme-gradient input,
+body.theme-terminal textarea, body.theme-terminal input {
+  background-color: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border-color: var(--border-color) !important;
+  transition: all 0.3s ease;
+}
+
+/* Focus rings */
+body.theme-terminal textarea:focus, body.theme-terminal input:focus {
+  border-color: #39ff14 !important;
+  box-shadow: 0 0 8px rgba(57, 255, 20, 0.5) !important;
+}
+
+body.theme-gradient textarea, body.theme-gradient input {
+  backdrop-filter: blur(12px) !important;
+}
+
+/* Custom styling for specific components under Terminal Theme */
+body.theme-terminal {
+  font-family: var(--font-mono), Courier, monospace !important;
+}
+body.theme-terminal * {
+  font-family: inherit !important;
+  text-shadow: 0 0 2px rgba(57, 255, 20, 0.3);
+}
+
+/* Button overrides for beautiful theme styles */
+body.theme-minimal button, body.theme-minimal a.px-4.py-2,
+body.theme-dark button, body.theme-dark a.px-4.py-2,
+body.theme-gradient button, body.theme-gradient a.px-4.py-2,
+body.theme-terminal button, body.theme-terminal a.px-4.py-2 {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Minimal Theme Buttons */
+body.theme-minimal .bg-blue-500 { background-color: #111827 !important; color: #ffffff !important; }
+body.theme-minimal .bg-blue-500:hover { background-color: #1f2937 !important; }
+body.theme-minimal .bg-gray-300 { background-color: #f3f4f6 !important; color: #111827 !important; border: 1px solid #d1d5db !important; }
+body.theme-minimal .bg-gray-300:hover { background-color: #e5e7eb !important; }
+
+/* Dark Theme Buttons */
+body.theme-dark .bg-blue-500 { background-color: #3b82f6 !important; color: #ffffff !important; }
+body.theme-dark .bg-blue-500:hover { background-color: #2563eb !important; }
+body.theme-dark .bg-gray-300 { background-color: #1f1f1f !important; color: #ededed !important; border: 1px solid #333333 !important; }
+body.theme-dark .bg-gray-300:hover { background-color: #2d2d2d !important; }
+
+/* Gradient Theme Buttons */
+body.theme-gradient .bg-blue-500 { background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%) !important; color: #ffffff !important; border: none !important; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+body.theme-gradient .bg-blue-500:hover { opacity: 0.9 !important; box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4); }
+body.theme-gradient .bg-gray-300 { background: rgba(255, 255, 255, 0.1) !important; color: #f8fafc !important; border: 1px solid rgba(255, 255, 255, 0.15) !important; backdrop-filter: blur(8px); }
+body.theme-gradient .bg-gray-300:hover { background: rgba(255, 255, 255, 0.2) !important; }
+
+/* Terminal Theme Buttons */
+body.theme-terminal .bg-blue-500 { background-color: #000000 !important; color: #39ff14 !important; border: 1px solid #39ff14 !important; border-radius: 0px !important; }
+body.theme-terminal .bg-blue-500:hover { background-color: #39ff14 !important; color: #000000 !important; box-shadow: 0 0 8px #39ff14; }
+body.theme-terminal .bg-gray-300 { background-color: #000000 !important; color: #1f8b0c !important; border: 1px solid #1f8b0c !important; border-radius: 0px !important; }
+body.theme-terminal .bg-gray-300:hover { background-color: #1f8b0c !important; color: #000000 !important; }
+
+/* General rounding adjustment for terminal theme */
+body.theme-terminal textarea, body.theme-terminal input, body.theme-terminal select {
+  border-radius: 0px !important;
+}
+
+/* Preview container overrides based on themes */
+body.theme-terminal .theme-preview-container,
+body.theme-terminal .theme-preview-container * {
+  color: #39ff14 !important;
+  font-family: var(--font-mono), monospace !important;
+  background: transparent !important;
+}
+
+body.theme-terminal .theme-preview-container a {
+  text-decoration: underline !important;
+  color: #39ff14 !important;
+}
+
+body.theme-terminal .theme-preview-container blockquote {
+  border-left-color: #39ff14 !important;
+}
+
+body.theme-terminal .theme-preview-container code,
+body.theme-terminal .theme-preview-container pre {
+  border: 1px solid #39ff14 !important;
+}
+
+body.theme-gradient .theme-preview-container a {
+  color: #c084fc !important;
+}
+
+body.theme-gradient .theme-preview-container h1,
+body.theme-gradient .theme-preview-container h2,
+body.theme-gradient .theme-preview-container h3,
+body.theme-gradient .theme-preview-container h4 {
+  background: linear-gradient(135deg, #c084fc 0%, #6366f1 100%) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+body.theme-gradient .theme-preview-container blockquote {
+  border-left-color: #c084fc !important;
+  background: rgba(255, 255, 255, 0.03) !important;
 }

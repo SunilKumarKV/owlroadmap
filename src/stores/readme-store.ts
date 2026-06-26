@@ -17,6 +17,7 @@ interface READMEState {
   setSkills: (value: string) => void;
   setProjects: (value: string) => void;
   setSocials: (value: string) => void;
+  reset: () => void;
 }
 
 const useREADMEStore = create<READMEState>()(
@@ -35,6 +36,7 @@ const useREADMEStore = create<READMEState>()(
       setSkills: (value) => set({ skills: value }),
       setProjects: (value) => set({ projects: value }),
       setSocials: (value) => set({ socials: value }),
+      reset: () => set({ name: '', role: '', about: '', skills: '', projects: '', socials: '' }),
     }),
     { name: 'readme-store' }
   )

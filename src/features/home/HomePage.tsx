@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Button } from '@/components/Button';
+import Button from '@/components/Button';
 import { GitHubIcon, RoadmapIcon } from '@/components/Icons';
 
 const HomePage: React.FC = () => {
