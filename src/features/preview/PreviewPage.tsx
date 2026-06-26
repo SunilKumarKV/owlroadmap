@@ -137,8 +137,8 @@ const PreviewPage = () => {
         )}
       </div>
 
-      {/* Action Buttons */}
       <div className="flex flex-wrap gap-4 mt-8 justify-center">
+        <Button href="/theme" variant="secondary">Theme Studio</Button>
         <Button href="/readme-builder" variant="secondary">Edit README</Button>
         <Button href="/roadmap-builder" variant="secondary">Edit Roadmap</Button>
         <Button onClick={handleCopy} variant={copied ? 'secondary' : 'primary'}>

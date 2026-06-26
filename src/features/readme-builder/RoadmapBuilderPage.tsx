@@ -94,6 +94,7 @@ const RoadmapBuilderPage = () => {
       </form>
 
       <div className="flex flex-wrap gap-4 mt-8 justify-center">
+        <Button href="/theme" variant="secondary">Theme Studio</Button>
         <Button href="/readme-builder" variant="secondary">Create README</Button>
         <Button href="/preview" variant="primary">Preview Markdown</Button>
       </div>

@@ -210,6 +210,7 @@ const READMEBuilderPage = () => {
         </div>
       </form>
       <div className="flex flex-wrap gap-4 mt-8 justify-center">
+        <Button href="/theme" variant="secondary">Theme Studio</Button>
         <Button href="/roadmap-builder" variant="secondary">Create Roadmap</Button>
         <Button href="/preview" variant="primary">Preview Markdown</Button>
         <Button onClick={reset} variant="secondary">Clear</Button>
