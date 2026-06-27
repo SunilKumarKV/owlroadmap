@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown } from '../markdown';
+import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown } from '../markdown';
 
 describe('markdown utilities', () => {
   describe('generateReadmeMarkdown', () => {
@@ -173,6 +173,47 @@ describe('markdown utilities', () => {
       expect(markdown).toContain('# Jane');
       expect(markdown).toContain('### 📊 GitHub Stats');
       expect(markdown).toContain('https://github-readme-stats.vercel.app/api?username=janedev&show_icons=true');
+    });
+  });
+
+  describe('generateTechStackMarkdown', () => {
+    it('should return empty string if techStack is disabled or empty', () => {
+      expect(generateTechStackMarkdown(undefined)).toBe('');
+      expect(generateTechStackMarkdown({ enabled: false } as any)).toBe('');
+      expect(generateTechStackMarkdown({ enabled: true, selectedIds: [] } as any)).toBe('');
+    });
+
+    it('should generate badges in flat-list format when groupByCategory is false', () => {
+      const config = {
+        enabled: true,
+        style: 'for-the-badge' as any,
+        iconOnly: false,
+        groupByCategory: false,
+        hideEmptyCategories: false,
+        selectedIds: ['javascript', 'react'],
+      };
+      const result = generateTechStackMarkdown(config);
+      expect(result).toContain('## 💻 Tech Stack');
+      expect(result).toContain('![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)');
+      expect(result).toContain('![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)');
+    });
+
+    it('should group badges by categories and support iconOnly mode', () => {
+      const config = {
+        enabled: true,
+        style: 'flat-square' as any,
+        iconOnly: true,
+        groupByCategory: true,
+        hideEmptyCategories: true,
+        selectedIds: ['javascript', 'react'],
+      };
+      const result = generateTechStackMarkdown(config);
+      expect(result).toContain('## 💻 Tech Stack');
+      expect(result).toContain('### Languages');
+      expect(result).toContain('### Frontend');
+      // in iconOnly mode, label parameter in url is empty: /badge/-COLOR
+      expect(result).toContain('![JavaScript](https://img.shields.io/badge/-F7DF1E?style=flat-square&logo=javascript&logoColor=black)');
+      expect(result).toContain('![React](https://img.shields.io/badge/-20232A?style=flat-square&logo=react&logoColor=61DAFB)');
     });
   });
 });

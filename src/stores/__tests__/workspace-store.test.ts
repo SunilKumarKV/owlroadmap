@@ -133,6 +133,14 @@ describe('useWorkspaceStore', () => {
                 streak: { enabled: true },
               },
             },
+            techStack: {
+              enabled: true,
+              style: 'for-the-badge',
+              iconOnly: false,
+              groupByCategory: true,
+              hideEmptyCategories: false,
+              selectedIds: ['react', 'typescript'],
+            },
           },
           roadmapData: {
             title: 'Custom Path',

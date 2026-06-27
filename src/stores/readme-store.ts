@@ -68,6 +68,24 @@ export const DEFAULT_GITHUB_STATS: GitHubStatsConfig = {
   },
 };
 
+export interface TechStackConfig {
+  enabled: boolean;
+  style: 'flat' | 'flat-square' | 'for-the-badge' | 'plastic';
+  iconOnly: boolean;
+  groupByCategory: boolean;
+  hideEmptyCategories: boolean;
+  selectedIds: string[];
+}
+
+export const DEFAULT_TECH_STACK: TechStackConfig = {
+  enabled: false,
+  style: 'for-the-badge',
+  iconOnly: false,
+  groupByCategory: true,
+  hideEmptyCategories: false,
+  selectedIds: [],
+};
+
 export type READMEField =
   | 'name'
   | 'role'
@@ -82,7 +100,8 @@ export type READMEField =
   | 'template'
   | 'readmeExportsCount'
   | 'templatesUsedCount'
-  | 'githubStats';
+  | 'githubStats'
+  | 'techStack';
 
 interface READMEState {
   name: string;
@@ -103,6 +122,7 @@ interface READMEState {
   aiSuggestions: AISuggestions | null;
   aiGenerationsCount: number;
   githubStats: GitHubStatsConfig;
+  techStack: TechStackConfig;
   setField: (field: READMEField, value: any) => void;
   setName: (value: string) => void;
   setRole: (value: string) => void;
@@ -122,6 +142,7 @@ interface READMEState {
   setRepoAnalysis: (analysis: RepoAnalysisResult | null) => void;
   setAiSuggestions: (suggestions: AISuggestions | null) => void;
   setGithubStats: (stats: Partial<GitHubStatsConfig>) => void;
+  setTechStack: (stack: Partial<TechStackConfig>) => void;
   reset: () => void;
 }
 
@@ -146,6 +167,7 @@ const useREADMEStore = create<READMEState>()(
       aiSuggestions: null,
       aiGenerationsCount: 0,
       githubStats: { ...DEFAULT_GITHUB_STATS },
+      techStack: { ...DEFAULT_TECH_STACK },
       setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
       setName: (value) => set({ name: value }),
       setRole: (value) => set({ role: value }),
@@ -187,6 +209,13 @@ const useREADMEStore = create<READMEState>()(
             ...stats,
           },
         })),
+      setTechStack: (stack) =>
+        set((state) => ({
+          techStack: {
+            ...state.techStack,
+            ...stack,
+          },
+        })),
       reset: () =>
         set({
           name: '',
@@ -207,6 +236,7 @@ const useREADMEStore = create<READMEState>()(
           aiSuggestions: null,
           aiGenerationsCount: 0,
           githubStats: { ...DEFAULT_GITHUB_STATS },
+          techStack: { ...DEFAULT_TECH_STACK },
         }),
     }),
     { name: 'readme-store' }

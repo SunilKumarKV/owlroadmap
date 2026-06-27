@@ -127,11 +127,29 @@ describe('useREADMEStore', () => {
     expect(updated.hideBorder).toBe(false); // check other properties remain intact
   });
 
+  it('should support updating techStack configuration', () => {
+    const store = useREADMEStore.getState();
+    expect(store.techStack.enabled).toBe(false);
+    expect(store.techStack.selectedIds).toEqual([]);
+
+    store.setTechStack({
+      enabled: true,
+      selectedIds: ['javascript', 'react'],
+      style: 'plastic',
+    });
+
+    const updated = useREADMEStore.getState();
+    expect(updated.techStack.enabled).toBe(true);
+    expect(updated.techStack.selectedIds).toEqual(['javascript', 'react']);
+    expect(updated.techStack.style).toBe('plastic');
+  });
+
   it('should reset state to initial values', () => {
     const store = useREADMEStore.getState();
     store.setName('John');
     store.setTemplate('developer');
     store.incrementReadmeExports();
+    store.setTechStack({ enabled: true, selectedIds: ['javascript'] });
 
     store.reset();
 
@@ -139,5 +157,7 @@ describe('useREADMEStore', () => {
     expect(resetState.name).toBe('');
     expect(resetState.template).toBe('minimal');
     expect(resetState.readmeExportsCount).toBe(0);
+    expect(resetState.techStack.enabled).toBe(false);
+    expect(resetState.techStack.selectedIds).toEqual([]);
   });
 });

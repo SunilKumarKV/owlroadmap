@@ -1,4 +1,5 @@
-import { READMEStyleTemplate, GitHubStatsConfig } from '@/stores/readme-store';
+import { READMEStyleTemplate, GitHubStatsConfig, TechStackConfig } from '@/stores/readme-store';
+import { TECHNOLOGY_REGISTRY, CATEGORIES, Technology } from './tech-registry';
 
 export interface READMEData {
   name?: string;
@@ -13,6 +14,7 @@ export interface READMEData {
   publicRepos?: number;
   template?: READMEStyleTemplate;
   githubStats?: GitHubStatsConfig;
+  techStack?: TechStackConfig;
 }
 
 export interface RoadmapData {
@@ -142,12 +144,55 @@ export function generateReadmeMarkdown(data: READMEData): string {
       break;
   }
 
+  let output = body;
   const githubStatsMarkdown = generateGithubStatsMarkdown(data.githubStats);
   if (githubStatsMarkdown) {
-    return [body, githubStatsMarkdown].filter(Boolean).join('\n\n');
+    output = [output, githubStatsMarkdown].filter(Boolean).join('\n\n');
   }
 
-  return body;
+  const techStackMarkdown = generateTechStackMarkdown(data.techStack);
+  if (techStackMarkdown) {
+    output = [output, techStackMarkdown].filter(Boolean).join('\n\n');
+  }
+
+  return output;
+}
+
+export function generateTechStackMarkdown(config?: TechStackConfig): string {
+  if (!config || !config.enabled || !config.selectedIds || config.selectedIds.length === 0) return '';
+
+  const { selectedIds, style, iconOnly, groupByCategory, hideEmptyCategories } = config;
+
+  // Resolve selected technologies in their exact ordering
+  const selectedTechs = selectedIds
+    .map((id) => TECHNOLOGY_REGISTRY.find((t) => t.id === id))
+    .filter((t): t is Technology => !!t);
+
+  if (selectedTechs.length === 0) return '';
+
+  const buildBadgeMarkdown = (tech: Technology): string => {
+    const label = iconOnly ? '' : encodeURIComponent(tech.name);
+    return `![${tech.name}](https://img.shields.io/badge/${label}-${tech.color}?style=${style}&logo=${tech.logo}&logoColor=${tech.logoColor})`;
+  };
+
+  if (groupByCategory) {
+    const categoriesList = CATEGORIES.map((category) => {
+      const categoryTechs = selectedTechs.filter((t) => t.category === category);
+      if (categoryTechs.length === 0) {
+        return hideEmptyCategories ? '' : `### ${category}\n\n*(None selected)*`;
+      }
+      const badges = categoryTechs.map(buildBadgeMarkdown).join(' ');
+      return `### ${category}\n\n${badges}`;
+    }).filter(Boolean);
+
+    if (categoriesList.length === 0) return '';
+
+    return [`## 💻 Tech Stack`, ...categoriesList].join('\n\n');
+  } else {
+    const badges = selectedTechs.map(buildBadgeMarkdown).join(' ');
+    return `## 💻 Tech Stack\n\n${badges}`;
+  }
+  return '';
 }
 
 export function generateRoadmapMarkdown(data: RoadmapData): string {

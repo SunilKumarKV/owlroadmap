@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import useReadmeStore, { GitHubStatsConfig } from './readme-store';
+import useReadmeStore, { GitHubStatsConfig, TechStackConfig } from './readme-store';
 import useRoadmapStore from './roadmap-store';
 import useThemeStore from './theme-store';
 
@@ -25,6 +25,7 @@ export interface Workspace {
     aiSuggestions: any;
     aiGenerationsCount: number;
     githubStats: GitHubStatsConfig;
+    techStack: TechStackConfig;
   };
   roadmapData: {
     title: string;
@@ -89,6 +90,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                 languages: { enabled: true },
                 streak: { enabled: true },
               },
+            },
+            techStack: {
+              enabled: false,
+              style: 'for-the-badge',
+              iconOnly: false,
+              groupByCategory: true,
+              hideEmptyCategories: false,
+              selectedIds: [],
             },
           },
           roadmapData: {
@@ -183,6 +192,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               aiSuggestions: readme.aiSuggestions,
               aiGenerationsCount: readme.aiGenerationsCount,
               githubStats: readme.githubStats,
+              techStack: readme.techStack,
             },
             roadmapData: {
               title: roadmap.title,
@@ -233,6 +243,14 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               streak: { enabled: true },
             },
           },
+          techStack: workspace.readmeData.techStack || {
+            enabled: false,
+            style: 'for-the-badge',
+            iconOnly: false,
+            groupByCategory: true,
+            hideEmptyCategories: false,
+            selectedIds: [],
+          },
         });
 
         useRoadmapStore.setState({
@@ -279,6 +297,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             aiSuggestions: readme.aiSuggestions,
             aiGenerationsCount: readme.aiGenerationsCount,
             githubStats: readme.githubStats,
+            techStack: readme.techStack,
           },
           roadmapData: {
             title: roadmap.title,
