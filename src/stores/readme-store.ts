@@ -112,6 +112,37 @@ export const DEFAULT_SOCIAL_LINKS: SocialLinksConfig = {
   ],
 };
 
+export interface AchievementWidgetConfig {
+  enabled: boolean;
+  theme?: string;
+  color?: string;
+  style?: string;
+  hideBorder?: boolean;
+  noFrame?: boolean;
+  noBg?: boolean;
+  rows?: number;
+  columns?: number;
+}
+
+export interface AchievementsConfig {
+  enabled: boolean;
+  username: string;
+  widgets: Record<'trophy' | 'visitor' | 'snake' | 'graph', AchievementWidgetConfig>;
+  order: ('trophy' | 'visitor' | 'snake' | 'graph')[];
+}
+
+export const DEFAULT_ACHIEVEMENTS: AchievementsConfig = {
+  enabled: false,
+  username: '',
+  widgets: {
+    trophy: { enabled: true, theme: 'flat', noFrame: false, noBg: false, rows: 1, columns: 6 },
+    visitor: { enabled: true, color: '0078d7', style: 'flat' },
+    snake: { enabled: true },
+    graph: { enabled: true, theme: 'github', hideBorder: false },
+  },
+  order: ['trophy', 'visitor', 'graph', 'snake'],
+};
+
 export type READMEField =
   | 'name'
   | 'role'
@@ -128,7 +159,8 @@ export type READMEField =
   | 'templatesUsedCount'
   | 'githubStats'
   | 'techStack'
-  | 'socialLinks';
+  | 'socialLinks'
+  | 'achievements';
 
 interface READMEState {
   name: string;
@@ -151,6 +183,7 @@ interface READMEState {
   githubStats: GitHubStatsConfig;
   techStack: TechStackConfig;
   socialLinks: SocialLinksConfig;
+  achievements: AchievementsConfig;
   setField: (field: READMEField, value: any) => void;
   setName: (value: string) => void;
   setRole: (value: string) => void;
@@ -172,6 +205,7 @@ interface READMEState {
   setGithubStats: (stats: Partial<GitHubStatsConfig>) => void;
   setTechStack: (stack: Partial<TechStackConfig>) => void;
   setSocialLinks: (links: Partial<SocialLinksConfig>) => void;
+  setAchievements: (achievements: Partial<AchievementsConfig>) => void;
   reset: () => void;
 }
 
@@ -198,6 +232,7 @@ const useREADMEStore = create<READMEState>()(
       githubStats: { ...DEFAULT_GITHUB_STATS },
       techStack: { ...DEFAULT_TECH_STACK },
       socialLinks: { ...DEFAULT_SOCIAL_LINKS },
+      achievements: { ...DEFAULT_ACHIEVEMENTS },
       setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
       setName: (value) => set({ name: value }),
       setRole: (value) => set({ role: value }),
@@ -253,6 +288,13 @@ const useREADMEStore = create<READMEState>()(
             ...links,
           },
         })),
+      setAchievements: (achievements) =>
+        set((state) => ({
+          achievements: {
+            ...state.achievements,
+            ...achievements,
+          },
+        })),
       reset: () =>
         set({
           name: '',
@@ -275,6 +317,7 @@ const useREADMEStore = create<READMEState>()(
           githubStats: { ...DEFAULT_GITHUB_STATS },
           techStack: { ...DEFAULT_TECH_STACK },
           socialLinks: { ...DEFAULT_SOCIAL_LINKS },
+          achievements: { ...DEFAULT_ACHIEVEMENTS },
         }),
     }),
     { name: 'readme-store' }

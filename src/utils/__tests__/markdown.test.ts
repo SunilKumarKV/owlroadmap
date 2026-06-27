@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown, generateSocialLinksMarkdown } from '../markdown';
+import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown, generateSocialLinksMarkdown, generateAchievementsMarkdown } from '../markdown';
 
 describe('markdown utilities', () => {
   describe('generateReadmeMarkdown', () => {
@@ -256,6 +256,34 @@ describe('markdown utilities', () => {
       };
       const result = generateSocialLinksMarkdown(config);
       expect(result).toContain('[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/alice-dev)');
+    });
+  });
+
+  describe('generateAchievementsMarkdown', () => {
+    it('should return empty string if achievements is disabled or empty', () => {
+      expect(generateAchievementsMarkdown(undefined)).toBe('');
+      expect(generateAchievementsMarkdown({ enabled: false } as any)).toBe('');
+      expect(generateAchievementsMarkdown({ enabled: true, username: '' } as any)).toBe('');
+    });
+
+    it('should generate trophy and activity graph with correct parameters and order', () => {
+      const config = {
+        enabled: true,
+        username: 'alice',
+        widgets: {
+          trophy: { enabled: true, theme: ' radical', rows: 2, columns: 5, noFrame: true, noBg: true },
+          visitor: { enabled: false },
+          snake: { enabled: false },
+          graph: { enabled: true, theme: 'tokyonight', hideBorder: true },
+        },
+        order: ['graph', 'trophy'] as any,
+      };
+      const result = generateAchievementsMarkdown(config);
+      expect(result).toContain('## 🏆 GitHub Achievements');
+      // order check: graph first, trophy second
+      expect(result).toMatch(/Activity Graph.*GitHub Trophies/s);
+      expect(result).toContain('https://github-readme-activity-graph.vercel.app/graph?username=alice&theme=tokyonight&hide_border=true');
+      expect(result).toContain('https://github-profile-trophy.vercel.app/?username=alice&theme= radical&no-frame=true&no-bg=true&row=2&column=5');
     });
   });
 });

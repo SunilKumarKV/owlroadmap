@@ -163,6 +163,22 @@ describe('useREADMEStore', () => {
     expect(updated.socialLinks.style).toBe('flat-square');
   });
 
+  it('should support updating achievements configuration', () => {
+    const store = useREADMEStore.getState();
+    expect(store.achievements.enabled).toBe(false);
+
+    store.setAchievements({
+      enabled: true,
+      username: 'alice',
+      order: ['visitor', 'graph'],
+    });
+
+    const updated = useREADMEStore.getState();
+    expect(updated.achievements.enabled).toBe(true);
+    expect(updated.achievements.username).toBe('alice');
+    expect(updated.achievements.order).toEqual(['visitor', 'graph']);
+  });
+
   it('should reset state to initial values', () => {
     const store = useREADMEStore.getState();
     store.setName('John');
@@ -170,6 +186,7 @@ describe('useREADMEStore', () => {
     store.incrementReadmeExports();
     store.setTechStack({ enabled: true, selectedIds: ['javascript'] });
     store.setSocialLinks({ enabled: true, platforms: { github: { enabled: true, value: 'john' } } });
+    store.setAchievements({ enabled: true, username: 'john' });
 
     store.reset();
 
@@ -181,5 +198,7 @@ describe('useREADMEStore', () => {
     expect(resetState.techStack.selectedIds).toEqual([]);
     expect(resetState.socialLinks.enabled).toBe(false);
     expect(resetState.socialLinks.platforms).toEqual({});
+    expect(resetState.achievements.enabled).toBe(false);
+    expect(resetState.achievements.username).toBe('');
   });
 });

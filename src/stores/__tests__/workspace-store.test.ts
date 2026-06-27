@@ -150,6 +150,17 @@ describe('useWorkspaceStore', () => {
               },
               order: ['linkedin'],
             },
+            achievements: {
+              enabled: true,
+              username: 'octocat',
+              widgets: {
+                trophy: { enabled: true, theme: 'flat', noFrame: false, noBg: false, rows: 1, columns: 6 },
+                visitor: { enabled: true, color: '0078d7', style: 'flat' },
+                snake: { enabled: true },
+                graph: { enabled: true, theme: 'github', hideBorder: false },
+              },
+              order: ['trophy', 'visitor', 'graph', 'snake'],
+            },
           },
           roadmapData: {
             title: 'Custom Path',

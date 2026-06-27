@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import useReadmeStore, { GitHubStatsConfig, TechStackConfig, SocialLinksConfig } from './readme-store';
+import useReadmeStore, { GitHubStatsConfig, TechStackConfig, SocialLinksConfig, AchievementsConfig } from './readme-store';
 import useRoadmapStore from './roadmap-store';
 import useThemeStore from './theme-store';
 
@@ -27,6 +27,7 @@ export interface Workspace {
     githubStats: GitHubStatsConfig;
     techStack: TechStackConfig;
     socialLinks: SocialLinksConfig;
+    achievements: AchievementsConfig;
   };
   roadmapData: {
     title: string;
@@ -111,6 +112,17 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                 'stackoverflow', 'devto', 'hashnode', 'medium',
                 'email', 'gmail', 'buymeacoffee', 'kofi'
               ],
+            },
+            achievements: {
+              enabled: false,
+              username: '',
+              widgets: {
+                trophy: { enabled: true, theme: 'flat', noFrame: false, noBg: false, rows: 1, columns: 6 },
+                visitor: { enabled: true, color: '0078d7', style: 'flat' },
+                snake: { enabled: true },
+                graph: { enabled: true, theme: 'github', hideBorder: false },
+              },
+              order: ['trophy', 'visitor', 'graph', 'snake'],
             },
           },
           roadmapData: {
@@ -207,6 +219,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               githubStats: readme.githubStats,
               techStack: readme.techStack,
               socialLinks: readme.socialLinks,
+              achievements: readme.achievements,
             },
             roadmapData: {
               title: roadmap.title,
@@ -277,6 +290,17 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               'email', 'gmail', 'buymeacoffee', 'kofi'
             ],
           },
+          achievements: workspace.readmeData.achievements || {
+            enabled: false,
+            username: '',
+            widgets: {
+              trophy: { enabled: true, theme: 'flat', noFrame: false, noBg: false, rows: 1, columns: 6 },
+              visitor: { enabled: true, color: '0078d7', style: 'flat' },
+              snake: { enabled: true },
+              graph: { enabled: true, theme: 'github', hideBorder: false },
+            },
+            order: ['trophy', 'visitor', 'graph', 'snake'],
+          },
         });
 
         useRoadmapStore.setState({
@@ -325,6 +349,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             githubStats: readme.githubStats,
             techStack: readme.techStack,
             socialLinks: readme.socialLinks,
+            achievements: readme.achievements,
           },
           roadmapData: {
             title: roadmap.title,
