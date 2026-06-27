@@ -222,4 +222,41 @@ describe('useREADMEStore', () => {
     expect(resetState.header.enabled).toBe(false);
     expect(resetState.header.name).toBe('');
   });
+
+  it('should apply templates correctly using applyTemplate', () => {
+    const store = useREADMEStore.getState();
+    const mockTemplate = {
+      id: 'tpl-test',
+      sections: ['header', 'about'],
+      config: {
+        header: {
+          enabled: true,
+          name: 'Test Dev',
+          title: 'Senior Engineer',
+          intro: 'Hello testing'
+        },
+        githubStats: { enabled: true, theme: 'tokyonight' },
+        techStack: { enabled: false, selectedIds: [] },
+        socialLinks: { enabled: true, platforms: { github: 'test' } },
+        achievements: { enabled: false, widgets: {} }
+      }
+    };
+
+    store.applyTemplate(mockTemplate);
+
+    const updated = useREADMEStore.getState();
+    expect(updated.name).toBe('Test Dev');
+    expect(updated.role).toBe('Senior Engineer');
+    expect(updated.about).toBe('Hello testing');
+    expect(updated.header.name).toBe('Test Dev');
+    expect(updated.header.title).toBe('Senior Engineer');
+    expect(updated.header.intro).toBe('Hello testing');
+    expect(updated.header.enabled).toBe(true);
+    expect(updated.githubStats.enabled).toBe(true);
+    expect(updated.githubStats.theme).toBe('tokyonight');
+    expect(updated.socialLinks.enabled).toBe(true);
+    expect(updated.sections.sections.header.enabled).toBe(true);
+    expect(updated.sections.sections.about.enabled).toBe(true);
+    expect(updated.sections.sections.socials.enabled).toBe(false);
+  });
 });

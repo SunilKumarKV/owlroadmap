@@ -395,6 +395,7 @@ interface READMEState {
   setStandaloneVisitor: (visitor: Partial<StandaloneVisitorConfig>) => void;
   setFeaturedProjects: (projects: Partial<FeaturedProjectsConfig>) => void;
   applyPreset: (presetName: string) => void;
+  applyTemplate: (template: any) => void;
   reset: () => void;
 }
 
@@ -563,6 +564,64 @@ const useREADMEStore = create<READMEState>()(
             sections: {
               sections: updatedSections,
               order: newOrder,
+            },
+          };
+        }),
+      applyTemplate: (template) =>
+        set((state) => {
+          const activeIds = template.sections || ['header', 'about', 'socials'];
+          const updatedSections = { ...state.sections.sections };
+
+          Object.keys(updatedSections).forEach((key) => {
+            const sectionId = key as SectionId;
+            updatedSections[sectionId] = {
+              ...updatedSections[sectionId],
+              enabled: activeIds.includes(sectionId),
+            };
+          });
+
+          const newOrder = [
+            ...activeIds,
+            ...state.sections.order.filter((id) => !activeIds.includes(id)),
+          ];
+
+          return {
+            sections: {
+              sections: updatedSections,
+              order: newOrder,
+            },
+            name: template.config.header.name || state.name,
+            role: template.config.header.title || state.role,
+            about: template.config.header.intro || state.about,
+            header: {
+              ...state.header,
+              ...template.config.header,
+              enabled: template.config.header.enabled,
+            },
+            githubStats: {
+              ...state.githubStats,
+              ...template.config.githubStats,
+              enabled: template.config.githubStats.enabled,
+            },
+            techStack: {
+              ...state.techStack,
+              ...template.config.techStack,
+              enabled: template.config.techStack.enabled,
+            },
+            socialLinks: {
+              ...state.socialLinks,
+              ...template.config.socialLinks,
+              enabled: template.config.socialLinks.enabled,
+            },
+            achievements: {
+              ...state.achievements,
+              ...template.config.achievements,
+              enabled: template.config.achievements.enabled,
+            },
+            quotes: {
+              ...state.quotes,
+              ...template.config.quotes,
+              enabled: template.config.quotes?.enabled || false,
             },
           };
         }),
