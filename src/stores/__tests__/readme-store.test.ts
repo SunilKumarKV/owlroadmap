@@ -144,12 +144,32 @@ describe('useREADMEStore', () => {
     expect(updated.techStack.style).toBe('plastic');
   });
 
+  it('should support updating socialLinks configuration', () => {
+    const store = useREADMEStore.getState();
+    expect(store.socialLinks.enabled).toBe(false);
+    expect(store.socialLinks.platforms).toEqual({});
+
+    store.setSocialLinks({
+      enabled: true,
+      platforms: {
+        linkedin: { enabled: true, value: 'john-doe' },
+      },
+      style: 'flat-square',
+    });
+
+    const updated = useREADMEStore.getState();
+    expect(updated.socialLinks.enabled).toBe(true);
+    expect(updated.socialLinks.platforms.linkedin).toEqual({ enabled: true, value: 'john-doe' });
+    expect(updated.socialLinks.style).toBe('flat-square');
+  });
+
   it('should reset state to initial values', () => {
     const store = useREADMEStore.getState();
     store.setName('John');
     store.setTemplate('developer');
     store.incrementReadmeExports();
     store.setTechStack({ enabled: true, selectedIds: ['javascript'] });
+    store.setSocialLinks({ enabled: true, platforms: { github: { enabled: true, value: 'john' } } });
 
     store.reset();
 
@@ -159,5 +179,7 @@ describe('useREADMEStore', () => {
     expect(resetState.readmeExportsCount).toBe(0);
     expect(resetState.techStack.enabled).toBe(false);
     expect(resetState.techStack.selectedIds).toEqual([]);
+    expect(resetState.socialLinks.enabled).toBe(false);
+    expect(resetState.socialLinks.platforms).toEqual({});
   });
 });

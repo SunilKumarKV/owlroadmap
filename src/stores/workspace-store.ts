@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import useReadmeStore, { GitHubStatsConfig, TechStackConfig } from './readme-store';
+import useReadmeStore, { GitHubStatsConfig, TechStackConfig, SocialLinksConfig } from './readme-store';
 import useRoadmapStore from './roadmap-store';
 import useThemeStore from './theme-store';
 
@@ -26,6 +26,7 @@ export interface Workspace {
     aiGenerationsCount: number;
     githubStats: GitHubStatsConfig;
     techStack: TechStackConfig;
+    socialLinks: SocialLinksConfig;
   };
   roadmapData: {
     title: string;
@@ -98,6 +99,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               groupByCategory: true,
               hideEmptyCategories: false,
               selectedIds: [],
+            },
+            socialLinks: {
+              enabled: false,
+              style: 'for-the-badge',
+              iconOnly: false,
+              platforms: {},
+              order: [
+                'linkedin', 'portfolio', 'github', 'gitlab',
+                'x', 'instagram', 'youtube', 'twitch', 'discord',
+                'stackoverflow', 'devto', 'hashnode', 'medium',
+                'email', 'gmail', 'buymeacoffee', 'kofi'
+              ],
             },
           },
           roadmapData: {
@@ -193,6 +206,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               aiGenerationsCount: readme.aiGenerationsCount,
               githubStats: readme.githubStats,
               techStack: readme.techStack,
+              socialLinks: readme.socialLinks,
             },
             roadmapData: {
               title: roadmap.title,
@@ -251,6 +265,18 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             hideEmptyCategories: false,
             selectedIds: [],
           },
+          socialLinks: workspace.readmeData.socialLinks || {
+            enabled: false,
+            style: 'for-the-badge',
+            iconOnly: false,
+            platforms: {},
+            order: [
+              'linkedin', 'portfolio', 'github', 'gitlab',
+              'x', 'instagram', 'youtube', 'twitch', 'discord',
+              'stackoverflow', 'devto', 'hashnode', 'medium',
+              'email', 'gmail', 'buymeacoffee', 'kofi'
+            ],
+          },
         });
 
         useRoadmapStore.setState({
@@ -298,6 +324,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             aiGenerationsCount: readme.aiGenerationsCount,
             githubStats: readme.githubStats,
             techStack: readme.techStack,
+            socialLinks: readme.socialLinks,
           },
           roadmapData: {
             title: roadmap.title,

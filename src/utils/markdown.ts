@@ -1,5 +1,6 @@
-import { READMEStyleTemplate, GitHubStatsConfig, TechStackConfig } from '@/stores/readme-store';
+import { READMEStyleTemplate, GitHubStatsConfig, TechStackConfig, SocialLinksConfig } from '@/stores/readme-store';
 import { TECHNOLOGY_REGISTRY, CATEGORIES, Technology } from './tech-registry';
+import { SOCIAL_PLATFORM_REGISTRY, SocialPlatform } from './social-registry';
 
 export interface READMEData {
   name?: string;
@@ -15,6 +16,7 @@ export interface READMEData {
   template?: READMEStyleTemplate;
   githubStats?: GitHubStatsConfig;
   techStack?: TechStackConfig;
+  socialLinks?: SocialLinksConfig;
 }
 
 export interface RoadmapData {
@@ -155,7 +157,41 @@ export function generateReadmeMarkdown(data: READMEData): string {
     output = [output, techStackMarkdown].filter(Boolean).join('\n\n');
   }
 
+  const socialLinksMarkdown = generateSocialLinksMarkdown(data.socialLinks);
+  if (socialLinksMarkdown) {
+    output = [output, socialLinksMarkdown].filter(Boolean).join('\n\n');
+  }
+
   return output;
+}
+
+export function generateSocialLinksMarkdown(config?: SocialLinksConfig): string {
+  if (!config || !config.enabled || !config.platforms) return '';
+
+  const { style, iconOnly, platforms, order = [] } = config;
+  const badgesList: string[] = [];
+
+  for (const platformId of order) {
+    const platform = SOCIAL_PLATFORM_REGISTRY.find((p) => p.id === platformId);
+    const platformConfig = platforms[platformId];
+    if (!platform || !platformConfig || !platformConfig.enabled || !platformConfig.value.trim()) {
+      continue;
+    }
+
+    const val = platformConfig.value.trim();
+    let targetUrl = val;
+    if (!val.startsWith('http://') && !val.startsWith('https://') && !val.startsWith('mailto:')) {
+      targetUrl = platform.urlTemplate.replace('{value}', val);
+    }
+
+    const label = iconOnly ? '' : encodeURIComponent(platform.name);
+    const badgeImageUrl = `https://img.shields.io/badge/${label}-${platform.color}?style=${style}&logo=${platform.logo}&logoColor=${platform.logoColor}`;
+
+    badgesList.push(`[![${platform.name}](${badgeImageUrl})](${targetUrl})`);
+  }
+
+  if (badgesList.length === 0) return '';
+  return `## 🔗 Social Links & Contact\n\n${badgesList.join(' ')}`;
 }
 
 export function generateTechStackMarkdown(config?: TechStackConfig): string {

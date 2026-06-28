@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown } from '../markdown';
+import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown, generateSocialLinksMarkdown } from '../markdown';
 
 describe('markdown utilities', () => {
   describe('generateReadmeMarkdown', () => {
@@ -214,6 +214,48 @@ describe('markdown utilities', () => {
       // in iconOnly mode, label parameter in url is empty: /badge/-COLOR
       expect(result).toContain('![JavaScript](https://img.shields.io/badge/-F7DF1E?style=flat-square&logo=javascript&logoColor=black)');
       expect(result).toContain('![React](https://img.shields.io/badge/-20232A?style=flat-square&logo=react&logoColor=61DAFB)');
+    });
+  });
+
+  describe('generateSocialLinksMarkdown', () => {
+    it('should return empty string if socialLinks is disabled or empty', () => {
+      expect(generateSocialLinksMarkdown(undefined)).toBe('');
+      expect(generateSocialLinksMarkdown({ enabled: false } as any)).toBe('');
+      expect(generateSocialLinksMarkdown({ enabled: true, platforms: {} } as any)).toBe('');
+    });
+
+    it('should generate badges in correct ordering and support iconOnly mode', () => {
+      const config = {
+        enabled: true,
+        style: 'flat-square' as any,
+        iconOnly: true,
+        platforms: {
+          linkedin: { enabled: true, value: 'alice-dev' },
+          github: { enabled: true, value: 'alice' },
+          x: { enabled: false, value: '' },
+        },
+        order: ['github', 'linkedin'],
+      };
+      const result = generateSocialLinksMarkdown(config);
+      expect(result).toContain('## 🔗 Social Links & Contact');
+      // order check: github first, linkedin second
+      expect(result).toMatch(/\[!\[GitHub\].*\[!\[LinkedIn\].*/);
+      expect(result).toContain('[![GitHub](https://img.shields.io/badge/-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/alice)');
+      expect(result).toContain('[![LinkedIn](https://img.shields.io/badge/-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/alice-dev)');
+    });
+
+    it('should generate standard badges when iconOnly is false', () => {
+      const config = {
+        enabled: true,
+        style: 'for-the-badge' as any,
+        iconOnly: false,
+        platforms: {
+          linkedin: { enabled: true, value: 'alice-dev' },
+        },
+        order: ['linkedin'],
+      };
+      const result = generateSocialLinksMarkdown(config);
+      expect(result).toContain('[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/alice-dev)');
     });
   });
 });

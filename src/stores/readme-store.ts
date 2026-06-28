@@ -86,6 +86,32 @@ export const DEFAULT_TECH_STACK: TechStackConfig = {
   selectedIds: [],
 };
 
+export interface SocialPlatformConfig {
+  enabled: boolean;
+  value: string;
+}
+
+export interface SocialLinksConfig {
+  enabled: boolean;
+  style: 'flat' | 'flat-square' | 'for-the-badge' | 'plastic';
+  iconOnly: boolean;
+  platforms: Record<string, SocialPlatformConfig>;
+  order: string[];
+}
+
+export const DEFAULT_SOCIAL_LINKS: SocialLinksConfig = {
+  enabled: false,
+  style: 'for-the-badge',
+  iconOnly: false,
+  platforms: {},
+  order: [
+    'linkedin', 'portfolio', 'github', 'gitlab',
+    'x', 'instagram', 'youtube', 'twitch', 'discord',
+    'stackoverflow', 'devto', 'hashnode', 'medium',
+    'email', 'gmail', 'buymeacoffee', 'kofi'
+  ],
+};
+
 export type READMEField =
   | 'name'
   | 'role'
@@ -101,7 +127,8 @@ export type READMEField =
   | 'readmeExportsCount'
   | 'templatesUsedCount'
   | 'githubStats'
-  | 'techStack';
+  | 'techStack'
+  | 'socialLinks';
 
 interface READMEState {
   name: string;
@@ -123,6 +150,7 @@ interface READMEState {
   aiGenerationsCount: number;
   githubStats: GitHubStatsConfig;
   techStack: TechStackConfig;
+  socialLinks: SocialLinksConfig;
   setField: (field: READMEField, value: any) => void;
   setName: (value: string) => void;
   setRole: (value: string) => void;
@@ -143,6 +171,7 @@ interface READMEState {
   setAiSuggestions: (suggestions: AISuggestions | null) => void;
   setGithubStats: (stats: Partial<GitHubStatsConfig>) => void;
   setTechStack: (stack: Partial<TechStackConfig>) => void;
+  setSocialLinks: (links: Partial<SocialLinksConfig>) => void;
   reset: () => void;
 }
 
@@ -168,6 +197,7 @@ const useREADMEStore = create<READMEState>()(
       aiGenerationsCount: 0,
       githubStats: { ...DEFAULT_GITHUB_STATS },
       techStack: { ...DEFAULT_TECH_STACK },
+      socialLinks: { ...DEFAULT_SOCIAL_LINKS },
       setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
       setName: (value) => set({ name: value }),
       setRole: (value) => set({ role: value }),
@@ -216,6 +246,13 @@ const useREADMEStore = create<READMEState>()(
             ...stack,
           },
         })),
+      setSocialLinks: (links) =>
+        set((state) => ({
+          socialLinks: {
+            ...state.socialLinks,
+            ...links,
+          },
+        })),
       reset: () =>
         set({
           name: '',
@@ -237,6 +274,7 @@ const useREADMEStore = create<READMEState>()(
           aiGenerationsCount: 0,
           githubStats: { ...DEFAULT_GITHUB_STATS },
           techStack: { ...DEFAULT_TECH_STACK },
+          socialLinks: { ...DEFAULT_SOCIAL_LINKS },
         }),
     }),
     { name: 'readme-store' }

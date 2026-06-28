@@ -141,6 +141,15 @@ describe('useWorkspaceStore', () => {
               hideEmptyCategories: false,
               selectedIds: ['react', 'typescript'],
             },
+            socialLinks: {
+              enabled: true,
+              style: 'flat',
+              iconOnly: false,
+              platforms: {
+                linkedin: { enabled: true, value: 'myuser' },
+              },
+              order: ['linkedin'],
+            },
           },
           roadmapData: {
             title: 'Custom Path',
