@@ -420,6 +420,7 @@ describe('markdown utilities', () => {
             projects: { id: 'projects', name: 'Projects', enabled: false, collapsed: false },
             quotes: { id: 'quotes', name: 'Quotes', enabled: false, collapsed: false },
             visitor: { id: 'visitor', name: 'Visitor', enabled: false, collapsed: false },
+            animatedComponents: { id: 'animatedComponents', name: 'Animated Components', enabled: false, collapsed: false },
           },
         },
       };

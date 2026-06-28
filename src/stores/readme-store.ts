@@ -209,7 +209,8 @@ export type SectionId =
   | 'support'
   | 'quotes'
   | 'visitor'
-  | 'custom';
+  | 'custom'
+  | 'animatedComponents';
 
 export interface SectionConfig {
   id: SectionId;
@@ -248,6 +249,103 @@ export interface StandaloneVisitorConfig {
   style: string;
 }
 
+export interface AnimatedComponentItem {
+  id: string;
+  type: 'typing' | 'waveHeader' | 'divider' | 'snake' | 'decorative' | 'badge' | 'footer';
+  enabled: boolean;
+  title: string;
+  config: Record<string, any>;
+}
+
+export interface AnimatedComponentsConfig {
+  enabled: boolean;
+  components: AnimatedComponentItem[];
+}
+
+export const DEFAULT_ANIMATED_COMPONENTS: AnimatedComponentsConfig = {
+  enabled: false,
+  components: [
+    {
+      id: 'typing-svg',
+      type: 'typing',
+      enabled: true,
+      title: 'Typing SVG Display',
+      config: {
+        lines: ["Hi, I'm a Software Engineer!", "Specializing in React & TypeScript.", "Passionate about open-source & clean code."],
+        speed: 10,
+        delay: 1000,
+        color: '36BCF7',
+        cursor: 'pipe',
+      },
+    },
+    {
+      id: 'wave-header',
+      type: 'waveHeader',
+      enabled: false,
+      title: 'Capsule Wave Header',
+      config: {
+        theme: 'auto',
+        height: 120,
+        text: 'Welcome to my Profile!',
+        animation: 'wave',
+      },
+    },
+    {
+      id: 'neon-divider',
+      type: 'divider',
+      enabled: false,
+      title: 'Neon Gradient Divider',
+      config: {
+        style: 'gradient-line',
+        color1: '#0078d7',
+        color2: '#36BCF7',
+        height: 4,
+      },
+    },
+    {
+      id: 'snake-grid',
+      type: 'snake',
+      enabled: false,
+      title: 'Contribution Grid Snake',
+      config: {
+        theme: 'github-dark',
+        colorPoint: '#39ff14',
+      },
+    },
+    {
+      id: 'stars-deco',
+      type: 'decorative',
+      enabled: false,
+      title: 'Decorative Star Clusters',
+      config: {
+        type: 'stars',
+        color: '#eab308',
+      },
+    },
+    {
+      id: 'pulsing-badge',
+      type: 'badge',
+      enabled: false,
+      title: 'Pulsing Hiring Indicator',
+      config: {
+        label: 'Open To Work',
+        color: '#10b981',
+        pulse: true,
+      },
+    },
+    {
+      id: 'footer-banner',
+      type: 'footer',
+      enabled: false,
+      title: 'Waving Footer Wave',
+      config: {
+        text: 'Thanks for stopping by! ❤️',
+        theme: 'auto',
+      },
+    },
+  ],
+};
+
 export const DEFAULT_SECTIONS: SectionOrderConfig = {
   order: [
     'header',
@@ -257,6 +355,7 @@ export const DEFAULT_SECTIONS: SectionOrderConfig = {
     'stats',
     'achievements',
     'projects',
+    'animatedComponents',
     'support',
     'quotes',
     'visitor',
@@ -270,6 +369,7 @@ export const DEFAULT_SECTIONS: SectionOrderConfig = {
     stats: { id: 'stats', name: 'GitHub Stats', enabled: true, collapsed: false },
     achievements: { id: 'achievements', name: 'Achievements', enabled: true, collapsed: false },
     projects: { id: 'projects', name: 'Featured Projects', enabled: true, collapsed: false },
+    animatedComponents: { id: 'animatedComponents', name: 'Animated Components', enabled: false, collapsed: false },
     support: { id: 'support', name: 'Support Me', enabled: false, collapsed: false },
     quotes: { id: 'quotes', name: 'Quotes', enabled: false, collapsed: false },
     visitor: { id: 'visitor', name: 'Visitor Counter', enabled: false, collapsed: false },
@@ -365,6 +465,7 @@ interface READMEState {
   customMarkdown: CustomMarkdownConfig;
   standaloneVisitor: StandaloneVisitorConfig;
   featuredProjects: FeaturedProjectsConfig;
+  animatedComponents: AnimatedComponentsConfig;
   setField: (field: READMEField, value: any) => void;
   setName: (value: string) => void;
   setRole: (value: string) => void;
@@ -377,6 +478,9 @@ interface READMEState {
   setFollowing: (value: number | undefined) => void;
   setPublicRepos: (value: number | undefined) => void;
   setTemplate: (value: READMEStyleTemplate) => void;
+  setAnimatedComponents: (config: Partial<AnimatedComponentsConfig>) => void;
+  updateAnimatedComponentItem: (id: string, updates: Partial<AnimatedComponentItem>) => void;
+  reorderAnimatedComponents: (items: AnimatedComponentItem[]) => void;
   incrementReadmeExports: () => void;
   incrementTemplatesUsed: () => void;
   incrementAiGenerations: () => void;
@@ -431,6 +535,7 @@ const useREADMEStore = create<READMEState>()(
       customMarkdown: { ...DEFAULT_CUSTOM_MARKDOWN },
       standaloneVisitor: { ...DEFAULT_STANDALONE_VISITOR },
       featuredProjects: { ...DEFAULT_FEATURED_PROJECTS },
+      animatedComponents: { ...DEFAULT_ANIMATED_COMPONENTS },
       setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
       setName: (value) => set({ name: value }),
       setRole: (value) => set({ role: value }),
@@ -540,6 +645,38 @@ const useREADMEStore = create<READMEState>()(
           featuredProjects: {
             ...state.featuredProjects,
             ...projects,
+          },
+        })),
+      setAnimatedComponents: (config) =>
+        set((state) => ({
+          animatedComponents: {
+            ...state.animatedComponents,
+            ...config,
+          },
+        })),
+      updateAnimatedComponentItem: (id, updates) =>
+        set((state) => ({
+          animatedComponents: {
+            ...state.animatedComponents,
+            components: state.animatedComponents.components.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    ...updates,
+                    config: {
+                      ...item.config,
+                      ...(updates.config || {}),
+                    },
+                  }
+                : item
+            ),
+          },
+        })),
+      reorderAnimatedComponents: (items) =>
+        set((state) => ({
+          animatedComponents: {
+            ...state.animatedComponents,
+            components: items,
           },
         })),
       applyPreset: (presetName) =>
@@ -757,6 +894,7 @@ const useREADMEStore = create<READMEState>()(
           customMarkdown: { ...DEFAULT_CUSTOM_MARKDOWN },
           standaloneVisitor: { ...DEFAULT_STANDALONE_VISITOR },
           featuredProjects: { ...DEFAULT_FEATURED_PROJECTS },
+          animatedComponents: { ...DEFAULT_ANIMATED_COMPONENTS },
         }),
     }),
     { name: 'readme-store' }

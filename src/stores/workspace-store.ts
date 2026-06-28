@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import useReadmeStore, { GitHubStatsConfig, TechStackConfig, SocialLinksConfig, AchievementsConfig, HeaderConfig, SectionOrderConfig, SupportConfig, QuotesConfig, CustomMarkdownConfig, StandaloneVisitorConfig } from './readme-store';
+import useReadmeStore, { GitHubStatsConfig, TechStackConfig, SocialLinksConfig, AchievementsConfig, HeaderConfig, SectionOrderConfig, SupportConfig, QuotesConfig, CustomMarkdownConfig, StandaloneVisitorConfig, AnimatedComponentsConfig } from './readme-store';
 import useRoadmapStore from './roadmap-store';
 import useThemeStore from './theme-store';
 
@@ -34,6 +34,7 @@ export interface Workspace {
     quotes: QuotesConfig;
     customMarkdown: CustomMarkdownConfig;
     standaloneVisitor: StandaloneVisitorConfig;
+    animatedComponents: AnimatedComponentsConfig;
   };
   roadmapData: {
     title: string;
@@ -156,7 +157,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               visitorPlacement: 'hidden',
             },
             sections: {
-              order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'support', 'quotes', 'visitor', 'custom'],
+              order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'animatedComponents', 'support', 'quotes', 'visitor', 'custom'],
               sections: {
                 header: { id: 'header', name: 'Profile Header', enabled: true, collapsed: false },
                 about: { id: 'about', name: 'About Me', enabled: true, collapsed: false },
@@ -165,6 +166,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
                 stats: { id: 'stats', name: 'GitHub Stats', enabled: true, collapsed: false },
                 achievements: { id: 'achievements', name: 'Achievements', enabled: true, collapsed: false },
                 projects: { id: 'projects', name: 'Featured Projects', enabled: true, collapsed: false },
+                animatedComponents: { id: 'animatedComponents', name: 'Animated Components', enabled: false, collapsed: false },
                 support: { id: 'support', name: 'Support Me', enabled: false, collapsed: false },
                 quotes: { id: 'quotes', name: 'Quotes', enabled: false, collapsed: false },
                 visitor: { id: 'visitor', name: 'Visitor Counter', enabled: false, collapsed: false },
@@ -175,6 +177,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             quotes: { enabled: false, theme: 'radical', quoteType: 'programming' },
             customMarkdown: { enabled: false, content: '' },
             standaloneVisitor: { enabled: false, username: '', color: 'green', style: 'flat' },
+            animatedComponents: { enabled: false, components: [] },
           },
           roadmapData: {
             title: '',
@@ -277,6 +280,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               quotes: readme.quotes,
               customMarkdown: readme.customMarkdown,
               standaloneVisitor: readme.standaloneVisitor,
+              animatedComponents: readme.animatedComponents,
             },
             roadmapData: {
               title: roadmap.title,
@@ -384,7 +388,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             visitorPlacement: 'hidden',
           },
           sections: workspace.readmeData.sections || {
-            order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'support', 'quotes', 'visitor', 'custom'],
+            order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'animatedComponents', 'support', 'quotes', 'visitor', 'custom'],
             sections: {
               header: { id: 'header', name: 'Profile Header', enabled: true, collapsed: false },
               about: { id: 'about', name: 'About Me', enabled: true, collapsed: false },
@@ -393,6 +397,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
               stats: { id: 'stats', name: 'GitHub Stats', enabled: true, collapsed: false },
               achievements: { id: 'achievements', name: 'Achievements', enabled: true, collapsed: false },
               projects: { id: 'projects', name: 'Featured Projects', enabled: true, collapsed: false },
+              animatedComponents: { id: 'animatedComponents', name: 'Animated Components', enabled: false, collapsed: false },
               support: { id: 'support', name: 'Support Me', enabled: false, collapsed: false },
               quotes: { id: 'quotes', name: 'Quotes', enabled: false, collapsed: false },
               visitor: { id: 'visitor', name: 'Visitor Counter', enabled: false, collapsed: false },
@@ -403,6 +408,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
           quotes: workspace.readmeData.quotes || { enabled: false, theme: 'radical', quoteType: 'programming' },
           customMarkdown: workspace.readmeData.customMarkdown || { enabled: false, content: '' },
           standaloneVisitor: workspace.readmeData.standaloneVisitor || { enabled: false, username: '', color: 'green', style: 'flat' },
+          animatedComponents: workspace.readmeData.animatedComponents || { enabled: false, components: [] },
         });
 
         useRoadmapStore.setState({
@@ -458,6 +464,7 @@ export const useWorkspaceStore = create<WorkspaceState>()(
             quotes: readme.quotes,
             customMarkdown: readme.customMarkdown,
             standaloneVisitor: readme.standaloneVisitor,
+            animatedComponents: readme.animatedComponents,
           },
           roadmapData: {
             title: roadmap.title,

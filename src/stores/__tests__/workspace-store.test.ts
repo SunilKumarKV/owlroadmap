@@ -186,8 +186,8 @@ describe('useWorkspaceStore', () => {
               },
               visitorPlacement: 'top',
             },
-            sections: {
-              order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'support', 'quotes', 'visitor', 'custom'],
+             sections: {
+              order: ['header', 'about', 'socials', 'techStack', 'stats', 'achievements', 'projects', 'animatedComponents', 'support', 'quotes', 'visitor', 'custom'],
               sections: {
                 header: { id: 'header', name: 'Profile Header', enabled: true, collapsed: false },
                 about: { id: 'about', name: 'About Me', enabled: true, collapsed: false },
@@ -196,6 +196,7 @@ describe('useWorkspaceStore', () => {
                 stats: { id: 'stats', name: 'GitHub Stats', enabled: true, collapsed: false },
                 achievements: { id: 'achievements', name: 'Achievements', enabled: true, collapsed: false },
                 projects: { id: 'projects', name: 'Featured Projects', enabled: true, collapsed: false },
+                animatedComponents: { id: 'animatedComponents', name: 'Animated Components', enabled: false, collapsed: false },
                 support: { id: 'support', name: 'Support Me', enabled: false, collapsed: false },
                 quotes: { id: 'quotes', name: 'Quotes', enabled: false, collapsed: false },
                 visitor: { id: 'visitor', name: 'Visitor Counter', enabled: false, collapsed: false },
@@ -206,6 +207,7 @@ describe('useWorkspaceStore', () => {
             quotes: { enabled: false, theme: 'radical', quoteType: 'programming' },
             customMarkdown: { enabled: false, content: '' },
             standaloneVisitor: { enabled: false, username: '', color: 'green', style: 'flat' },
+            animatedComponents: { enabled: false, components: [] },
           },
           roadmapData: {
             title: 'Custom Path',
