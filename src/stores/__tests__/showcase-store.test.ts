@@ -54,9 +54,20 @@ describe('useShowcaseStore state management', () => {
       author: 'systems_fan',
       category: 'terminal',
       technologies: ['Rust', 'Go', 'Linux'],
-      sections: ['header', 'about'],
       theme: 'terminal',
-      config: { header: { name: 'Dr. Systems' } }
+      config: {
+        name: 'Dr. Systems',
+        role: 'Systems Programmer',
+        about: 'Low level coder',
+        skills: 'Rust, Assembly',
+        projects: 'micro-kernel',
+        socials: '@systems',
+        avatarUrl: '',
+        template: 'minimal',
+        githubStats: { enabled: false, username: '', theme: '', hideBorder: false, showIcons: false, compactMode: false, layout: 'default', cardOrder: [], cardConfigs: { stats: { enabled: false }, languages: { enabled: false }, streak: { enabled: false } } },
+        techStack: { enabled: false, style: 'flat', iconOnly: false, groupByCategory: false, hideEmptyCategories: false, selectedIds: [] },
+        socialLinks: { enabled: false, style: 'flat', iconOnly: false, platforms: {}, order: [] }
+      }
     });
 
     const state = useShowcaseStore.getState();
@@ -75,9 +86,20 @@ describe('useShowcaseStore state management', () => {
       author: 'ai_guru',
       category: 'ai',
       technologies: ['Jupyter', 'FastAPI'],
-      sections: ['header'],
       theme: 'gradient',
-      config: { header: { name: 'Guru AI' } }
+      config: {
+        name: 'Guru AI',
+        role: 'AI Developer',
+        about: 'AI engineer',
+        skills: 'Jupyter, PyTorch',
+        projects: 'Neural Cloud',
+        socials: '@guru',
+        avatarUrl: '',
+        template: 'portfolio',
+        githubStats: { enabled: false, username: '', theme: '', hideBorder: false, showIcons: false, compactMode: false, layout: 'default', cardOrder: [], cardConfigs: { stats: { enabled: false }, languages: { enabled: false }, streak: { enabled: false } } },
+        techStack: { enabled: false, style: 'flat', iconOnly: false, groupByCategory: false, hideEmptyCategories: false, selectedIds: [] },
+        socialLinks: { enabled: false, style: 'flat', iconOnly: false, platforms: {}, order: [] }
+      }
     });
 
     const res = store.importShowcases(validJson);

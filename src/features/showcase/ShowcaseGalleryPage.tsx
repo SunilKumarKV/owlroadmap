@@ -23,7 +23,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useShowcaseStore, Showcase, ShowcaseCategory } from '@/stores/showcase-store';
-import useReadmeStore, { SectionId } from '@/stores/readme-store';
+import useReadmeStore from '@/stores/readme-store';
 import { generateReadmeMarkdown } from '@/utils/markdown';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
@@ -56,8 +56,6 @@ const ShowcaseGalleryPage = () => {
     deleteShowcase,
     addShowcase,
   } = useShowcaseStore();
-
-  const { applyTemplate } = useReadmeStore();
 
   // Local state
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,7 +124,22 @@ const ShowcaseGalleryPage = () => {
 
   // Duplicate layout to editor configuration
   const handleDuplicateToEditor = (show: Showcase) => {
-    applyTemplate(show);
+    useReadmeStore.setState({
+      name: show.config.name,
+      role: show.config.role,
+      about: show.config.about,
+      skills: show.config.skills,
+      projects: show.config.projects,
+      socials: show.config.socials,
+      avatarUrl: show.config.avatarUrl,
+      followers: show.config.followers,
+      following: show.config.following,
+      publicRepos: show.config.publicRepos,
+      template: show.config.template,
+      githubStats: show.config.githubStats,
+      techStack: show.config.techStack,
+      socialLinks: show.config.socialLinks,
+    });
     setPreviewingShowcase(null);
     router.push('/readme-builder');
   };
@@ -172,17 +185,20 @@ const ShowcaseGalleryPage = () => {
   const handlePublishCustomShowcase = () => {
     const readmeState = useReadmeStore.getState();
     const config = {
-      header: readmeState.header,
+      name: readmeState.name,
+      role: readmeState.role,
+      about: readmeState.about,
+      skills: readmeState.skills,
+      projects: readmeState.projects,
+      socials: readmeState.socials,
+      avatarUrl: readmeState.avatarUrl,
+      followers: readmeState.followers,
+      following: readmeState.following,
+      publicRepos: readmeState.publicRepos,
+      template: readmeState.template,
       githubStats: readmeState.githubStats,
       techStack: readmeState.techStack,
       socialLinks: readmeState.socialLinks,
-      achievements: readmeState.achievements,
-      quotes: readmeState.quotes,
-      customMarkdown: readmeState.customMarkdown,
-      support: readmeState.support,
-      standaloneVisitor: readmeState.standaloneVisitor,
-      featuredProjects: readmeState.featuredProjects,
-      animatedComponents: readmeState.animatedComponents,
     };
 
     addShowcase({
@@ -191,7 +207,6 @@ const ShowcaseGalleryPage = () => {
       author: createForm.author || 'dev_master',
       category: createForm.category,
       technologies: createForm.technologiesInput ? createForm.technologiesInput.split(',').map(t => t.trim()).filter(Boolean) : [],
-      sections: readmeState.sections.order.filter((id: SectionId) => readmeState.sections.sections[id].enabled),
       theme: createForm.theme,
       config,
     });
@@ -536,15 +551,12 @@ const ShowcaseGalleryPage = () => {
                   </div>
 
                   <div className="space-y-2 border-t border-gray-100 dark:border-gray-850 pt-4">
-                    <span className="font-semibold text-gray-500 dark:text-gray-400 block">Included Sections:</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {previewingShowcase.sections.map((id) => (
-                        <span key={id} className="px-2 py-0.5 rounded bg-gray-105 dark:bg-[#1a1a20] text-gray-650 dark:text-gray-300 font-medium">
-                          📂 {id}
-                        </span>
-                      ))}
-                    </div>
+                    <span className="font-semibold text-gray-500 dark:text-gray-400 block">Layout Template Style:</span>
+                    <span className="inline-block capitalize px-2.5 py-0.5 rounded bg-amber-500/10 text-amber-550 dark:text-amber-400 font-bold border border-amber-500/20">
+                      📝 {previewingShowcase.config.template} Layout
+                    </span>
                   </div>
+
                 </div>
               )}
 
