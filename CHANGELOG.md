@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-06-28
+### Added
+- **README Showcase Gallery**: Responsive community showcases grid gallery page under `/gallery` with search, categorization, live preview tabs, and one-click duplication tools mapping preset configurations directly into the active editor.
+- **Version History & Snapshots**: Integrated client-side version control engine featuring undo/redo stacks, Ctrl+Z/Ctrl+Y hotkey triggers, custom manual snap points, relative timeline lists, granular section-by-section restores, and side-by-side markdown comparison diff.
+
 ## [1.0.0] - Planned
 ### Added
 - **GitHub OAuth Authentication**: Transition from simple public fetching to official GitHub sign-ins for private repository sync and higher API limits.
