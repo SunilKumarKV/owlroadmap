@@ -428,46 +428,6 @@ const READMEBuilderPage = () => {
   const handleExportAnalysisReport = () => {
     const reportText = `OWLROADMAP README QUALITY REPORT
 Generated: ${new Date().toLocaleDateString()}
-========================================
-
-OVERALL QUALITY SCORE: ${analysisResult.overallScore}/100
-
-CATEGORY BREAKDOWN:
-----------------------------------------
-- Completeness: ${analysisResult.categories.completeness.score}/100
-- Readability: ${analysisResult.categories.readability.score}/100
-- Developer Branding: ${analysisResult.categories.branding.score}/100
-- GitHub Presence: ${analysisResult.categories.githubPresence.score}/100
-- Accessibility: ${analysisResult.categories.accessibility.score}/100
-
-MISSING SECTIONS:
-----------------------------------------
-${analysisResult.missingSections.length > 0 
-  ? analysisResult.missingSections.map((s: string) => `- ${s}`).join('\n')
-  : 'None! All major sections are present.'}
-
-IMPROVEMENT SUGGESTIONS:
-----------------------------------------
-${analysisResult.suggestions.length > 0 
-  ? analysisResult.suggestions.map((s: string) => `- ${s}`).join('\n')
-  : 'Fantastic job! No improvements needed.'}
-
-RECOMMENDED TEMPLATES:
-----------------------------------------
-${analysisResult.recommendedTemplates.map((t: string) => `- ${t}`).join('\n')}
-`;
-
-    const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `readme-quality-report-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   // Synchronized scrolling logic
   const editorScrollRef = useRef<HTMLTextAreaElement>(null);
   const previewScrollRef = useRef<HTMLDivElement>(null);
