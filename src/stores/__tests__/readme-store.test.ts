@@ -259,4 +259,45 @@ describe('useREADMEStore', () => {
     expect(updated.sections.sections.about.enabled).toBe(true);
     expect(updated.sections.sections.socials.enabled).toBe(false);
   });
+
+  it('should import README data correctly using importReadmeData', () => {
+    const store = useREADMEStore.getState();
+    const mockImportedData = {
+      name: 'Imported Dev',
+      role: 'Full Stack',
+      about: 'Pioneering open source',
+      header: {
+        name: 'Imported Dev',
+        title: 'Full Stack',
+        intro: 'Pioneering open source',
+        location: 'California',
+      },
+      socialLinks: {
+        platforms: {
+          linkedin: { enabled: true, value: 'imported-dev' },
+        },
+      },
+      techStack: {
+        selectedIds: ['javascript', 'typescript'],
+      },
+    };
+
+    store.importReadmeData(mockImportedData, ['header', 'socials', 'techStack']);
+
+    const updated = useREADMEStore.getState();
+    expect(updated.name).toBe('Imported Dev');
+    expect(updated.role).toBe('Full Stack');
+    expect(updated.about).toBe('Pioneering open source');
+    expect(updated.header.name).toBe('Imported Dev');
+    expect(updated.header.title).toBe('Full Stack');
+    expect(updated.header.intro).toBe('Pioneering open source');
+    expect(updated.header.location).toBe('California');
+    expect(updated.header.enabled).toBe(true);
+    expect(updated.socialLinks.platforms.linkedin.value).toBe('imported-dev');
+    expect(updated.techStack.selectedIds).toEqual(['javascript', 'typescript']);
+    expect(updated.sections.sections.header.enabled).toBe(true);
+    expect(updated.sections.sections.socials.enabled).toBe(true);
+    expect(updated.sections.sections.techStack.enabled).toBe(true);
+    expect(updated.sections.sections.about.enabled).toBe(false);
+  });
 });

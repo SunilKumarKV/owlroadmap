@@ -1,64 +1,51 @@
-# Walkthrough — Multi-Panel Live Editor Workspace & Template Marketplace
+# Walkthrough — Existing README Import
 
-We have successfully implemented the **Multi-Panel Live Editor Workspace** and the **Template Marketplace** for the README Builder in OwlRoadmap v1.1.0. This workspace transforms the README building experience into a professional, responsive, and resizable layout similar to GPRM with instant, one-click template application.
+We have successfully implemented the **Existing README Import** feature for the README Builder in OwlRoadmap v1.1.0. This feature allows users to reverse-parse their existing GitHub Profile or repository READMEs and continue editing them visually within the application.
 
 ---
 
 ## File Changes & Architecture
 
-### [`src/utils/template-registry.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/utils/template-registry.ts)
-- **[NEW]** Static templates registry defining 9 unique template structures matching specific styles: Minimal, Modern, Open Source, Full Stack, Frontend, AI, Terminal, GPRM, and Anime.
-- Declares configuration presets mappings covering header formatting, badges, statistics cards themes, and active sections.
+### [`src/utils/readme-importer.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/utils/readme-importer.ts)
+- **[NEW]** Layout parser and section detector service. Runs detailed regular expression scans on a raw Markdown string to identify header alignments, greetings, capsule render banners, typing SVGs, Shields.io badges, stats cards, and trophies.
+- Safely extracts configurations, usernames, styles, colors, and layout presets.
+- Unmatched sections are preserved as a Custom Markdown block.
 
-### [`src/utils/__tests__/template-registry.test.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/utils/__tests__/template-registry.test.ts)
-- **[NEW]** Verifies category definitions, templates count, and structural properties constraints.
+### [`src/utils/__tests__/readme-importer.test.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/utils/__tests__/readme-importer.test.ts)
+- **[NEW]** Comprehensive test suite verifying parser outputs for greetings, typing lines, stats themes, social media icons, and fallback blocks.
 
 ### [`src/stores/readme-store.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/stores/readme-store.ts)
-- Implemented `applyTemplate(template)` action to dynamically update layout section arrays, names, subtitles, and individual feature configuration toggles in the store.
+- Implemented `importReadmeData(config, selectedSections)` store action. Maps parsed settings directly into active Zustand config states for selected checkboxes.
 
 ### [`src/stores/__tests__/readme-store.test.ts`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/stores/__tests__/readme-store.test.ts)
-- Added suite verifying that layout section enables, subtitles, and stats configurations map correctly upon calling `applyTemplate`.
+- Verified correct mapping of name, subtitle, tech badges, and enabling/disabling sections during imports.
 
 ### [`src/features/readme-builder/READMEBuilderPage.tsx`](file:///Users/sunilkumarkv/Desktop/Projects/owlroadmap/src/features/readme-builder/READMEBuilderPage.tsx)
-- Added Tab Switcher in Panel 1 separating the **Edit Sections** configuration forms and the **Marketplace Gallery**.
-- Rendered visual mini CSS layouts representing each card's layout style.
-- Hooked up search inputs and category filters.
-- Implemented favorite toggles and recently used templates tracked in local storage.
-- Added workspace duplication action that creates a new workspace using the template configurations.
-- Integrated Import/Export configuration options to save or load JSON layout settings.
-- Built detailed description modals overlaying active setups, support modules, and style themes.
-- Updated mobile responsive layout to expose both Edit Sections and Template Gallery options.
+- Integrated the `Import README` action button in the workspace toolbar.
+- Built the multi-step **Import Wizard Dialog**:
+  - **Step 1: Input Source Selector**: Tabs for Username, Repo URL, Raw Markdown URL, Pasting, and Drag-and-Drop files.
+  - **Step 2: Section Summary**: Scans layout structures and lets users select which parsed elements (Header, Tech Stack, stats) to keep.
+  - **Step 3: Conflict Resolution**: Allows importing into a new workspace (recommended), merging, or overwriting.
 
 ---
 
-## Premium Marketplace Features
+## Technical Details
 
-### 1. 9 Styled Template Categories
-- **Minimal**: Clean layout with essential header and social badges.
-- **Modern**: Stats cards, typing banners, and center-aligned headings.
-- **Open Source**: Rich activity graphs, snake widgets, and repository counters.
-- **Full Stack**: Complex multi-layer tech stack selections and custom project cards.
-- **Frontend**: Designer assets, colorful waves, and visual platform badges.
-- **AI Engineer**: CUDA, Python, quotes modules, and radical themes.
-- **Terminal Style**: Green-on-black retro monospaced CLI commands and neon styles.
-- **GPRM Style**: Replicates classic header options, statistics configurations, and visitor widgets.
-- **Anime Style**: Pink cyberpunk gradients, emojis, and quotes boxes.
+### 1. Robust Section Parser
+- **Header**: Matches Greetings (`Hi 👋, I'm...`), pronouns `(he/him)`, location (`based in...`), capsule render URLs (`type=waving`), typing SVG URLs (`lines=...`), and status badges.
+- **Socials & Tech Badges**: Matches badge images by logo and alt text aliases (e.g. mapping `Twitter` badge to `'x'` registry ID). Extracts user profiles and target links.
+- **Stats & Streak**: Scans `github-readme-stats` and streak URLs to capture username, theme, and layout configurations.
+- **Achievements**: Detects `github-profile-trophy`, activity graph, visitor counters, and snake widgets.
 
-### 2. Favorites & Recently Used
-- Users can click the heart icon to pin their preferred templates, persisting across visits.
-- Applying a template places it in the "Recently Used" badge row for fast access.
-
-### 3. One-Click Apply & Duplicate
-- Clicking **Apply** instantly configures the workspace store.
-- Clicking **Dup** clones the template configurations to a brand new named workspace on-the-fly.
-
-### 4. Configuration Import & Export
-- Users can download their workspace configurations as a JSON file or upload one to restore settings.
+### 2. Conflict Handling
+- **Create New Workspace**: Prompts user for a workspace name, creates a new workspace, and loads settings there, keeping active configs safe.
+- **Merge**: Updates properties for imported sections, keeping other sections unchanged.
+- **Overwrite**: Loads imported sections and disables unselected ones.
 
 ---
 
 ## Verification & Metrics
 
-- **Unit Tests**: `pnpm test` successfully passed all 105 tests.
-- **TypeScript**: `pnpm tsc --noEmit` compiled clean with 0 errors.
-- **NextJS Build**: `pnpm build` compiled and optimized production routes successfully.
+- **Unit Tests**: All 111 tests passed successfully (`pnpm test`).
+- **TypeScript**: Compiled cleanly with 0 type errors (`pnpm tsc --noEmit`).
+- **Production Build**: Bundled NextJS routes successfully (`pnpm build`).

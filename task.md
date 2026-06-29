@@ -1,40 +1,25 @@
-# Multi-Panel Live Editor & Template Marketplace Checklist
+# README Import Implementation Checklist
 
-## UI & Layout Setup
-- [x] Add resizable container styling to `globals.css`
-- [x] Import `usePanelStore`, `generateReadmeMarkdown`, and Lucide icons in `READMEBuilderPage.tsx`
-- [x] Create the outer workspace scaffolding with global header bar (workspace select, theme select, reset layout)
+## Parser & Detector Architecture
+- [x] Create `readme-importer.ts` with layout parser, badge resolver, and section detector
+- [x] Implement robust regular expressions for extracting banners, header details, and typing lines
+- [x] Implement Shields.io badge matcher for mapping social links and tech stack logos
+- [x] Implement streak, trophy, and activity graph parser
+- [x] Implement fallback to capture unmatched content as Custom Markdown sections
+- [x] Handle malformed or incomplete markdown inputs safely
 
-## Panel 1: Section Builder & Template Marketplace
-- [x] Implement Search Sections input field
-- [x] Clean up and embed the Section Manager reorderable list and presets inside Section Builder
-- [x] Embed the scrollable forms container
-- [x] Create the **Template Marketplace** tab switcher in Panel 1
-- [x] Implement template registry (`template-registry.ts`) covering 9 styled layout categories (Minimal, Modern, Open Source, Full Stack, Frontend, AI, Terminal, GPRM, Anime)
-- [x] Add Template search bar and category scroll filters
-- [x] Implement visual mini layout card previews with distinct dynamic CSS structures
-- [x] Add favorite templates support with heart toggles, persisted to local storage
-- [x] Track applied templates in recently used list, persisted to local storage
-- [x] Build the duplication action to clone template configurations to a new workspace dynamically
-- [x] Add JSON configuration Import & Export utility triggers
+## State & Store Sync
+- [x] Extend `READMEState` interface in `readme-store.ts` to add the `importReadmeData` action
+- [x] Implement `importReadmeData` mapper inside the store that populates active config sections
 
-## Panel 2: Live Preview
-- [x] Set up the dynamic `@uiw/react-md-editor` Markdown preview renderer
-- [x] Hook up image tags, badges, and stats card rendering
-- [x] Implement fullscreen/toggle controls for the preview panel
-- [x] Build the detailed preview modal overlay displaying active sections, descriptions, and applied styles with escape-key exit handlers
-
-## Panel 3: Markdown Output
-- [x] Build the monospaced raw markdown code area
-- [x] Hook up Copy and Download buttons in the header
-- [x] Implement auto-scroll synchronization between the markdown code area and the live preview
-
-## Panel Resizing & Persistence
-- [x] Implement drag separator bars utilizing PointerEvents
-- [x] Persist panel configurations and collapsed states in `usePanelStore`
-- [x] Build the mobile tab selectors supporting both the section editors and template gallery switchers responsive on smaller viewports
+## UI Wizard & Workflow
+- [x] Implement Import Wizard Modal overlay in `READMEBuilderPage.tsx`
+- [x] Build Step 1: Input source selector tabs (GitHub Username, Repo URL, Pasting text, Upload file)
+- [x] Build Step 2: Parsing loader animation and checkbox selector listing detected layout elements
+- [x] Build Step 3: Conflict warning dialog with resolution modes (create workspace, merge, overwrite)
+- [x] Add Escape key close and backdrop closing listener
 
 ## Verification & Testing
-- [x] Verify that all unit tests pass successfully (105 tests passing)
-- [x] Verify type correctness with typescript compiler (`pnpm tsc --noEmit` returns 0 errors)
-- [x] Run build test to confirm production build success
+- [x] Add unit tests in `readme-importer.test.ts`
+- [x] Verify test suite passes
+- [x] Run typescript compiler and production build checks

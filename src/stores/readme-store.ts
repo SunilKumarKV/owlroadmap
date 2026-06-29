@@ -396,6 +396,7 @@ interface READMEState {
   setFeaturedProjects: (projects: Partial<FeaturedProjectsConfig>) => void;
   applyPreset: (presetName: string) => void;
   applyTemplate: (template: any) => void;
+  importReadmeData: (importedData: any, selectedSectionIds: SectionId[]) => void;
   reset: () => void;
 }
 
@@ -624,6 +625,107 @@ const useREADMEStore = create<READMEState>()(
               enabled: template.config.quotes?.enabled || false,
             },
           };
+        }),
+      importReadmeData: (importedData, selectedSectionIds) =>
+        set((state) => {
+          const updatedSections = { ...state.sections.sections };
+          const activeIds = [...selectedSectionIds];
+
+          // Enable/disable sections based on selection
+          Object.keys(updatedSections).forEach((key) => {
+            const sectionId = key as SectionId;
+            updatedSections[sectionId] = {
+              ...updatedSections[sectionId],
+              enabled: activeIds.includes(sectionId),
+            };
+          });
+
+          // Order selected ones first
+          const newOrder = [
+            ...activeIds,
+            ...state.sections.order.filter((id) => !activeIds.includes(id)),
+          ];
+
+          const updates: any = {
+            sections: {
+              sections: updatedSections,
+              order: newOrder,
+            },
+          };
+
+          if (selectedSectionIds.includes('header')) {
+            updates.name = importedData.name || state.name;
+            updates.role = importedData.role || state.role;
+            updates.about = importedData.about || state.about;
+            updates.header = {
+              ...state.header,
+              ...importedData.header,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('about')) {
+            updates.about = importedData.about || state.about;
+          }
+
+          if (selectedSectionIds.includes('socials')) {
+            // Convert imported platforms format { enabled: true, value: '' } to matches
+            const mergedPlatforms = { ...state.socialLinks.platforms };
+            Object.keys(importedData.socialLinks.platforms).forEach((key) => {
+              mergedPlatforms[key] = {
+                enabled: true,
+                value: importedData.socialLinks.platforms[key].value,
+              };
+            });
+            updates.socialLinks = {
+              ...state.socialLinks,
+              ...importedData.socialLinks,
+              platforms: mergedPlatforms,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('techStack')) {
+            updates.techStack = {
+              ...state.techStack,
+              ...importedData.techStack,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('stats')) {
+            updates.githubStats = {
+              ...state.githubStats,
+              ...importedData.githubStats,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('achievements')) {
+            updates.achievements = {
+              ...state.achievements,
+              ...importedData.achievements,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('quotes')) {
+            updates.quotes = {
+              ...state.quotes,
+              ...importedData.quotes,
+              enabled: true,
+            };
+          }
+
+          if (selectedSectionIds.includes('custom')) {
+            updates.customMarkdown = {
+              ...state.customMarkdown,
+              ...importedData.customMarkdown,
+              enabled: true,
+            };
+          }
+
+          return updates;
         }),
       reset: () =>
         set({
