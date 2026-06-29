@@ -17,10 +17,15 @@ export interface ProfileSuggestions {
   githubImprovements: string[];
 }
 
+export interface ImproveSuggestions {
+  alternatives: string[];
+}
+
 export interface AIService {
   generateReadmeSuggestions(profileData: any, repoData: any): Promise<ReadmeSuggestions>;
   generateRoadmapSuggestions(roadmapTitle: string, currentSteps: string[]): Promise<RoadmapSuggestions>;
   generateProfileSuggestions(profileData: any, repoData: any): Promise<ProfileSuggestions>;
+  improveText(text: string, tone: string, type: string): Promise<ImproveSuggestions>;
 }
 
 /**
@@ -93,6 +98,66 @@ export class DynamicLocalAIService implements AIService {
       githubImprovements,
     };
   }
+
+  async improveText(text: string, tone: string, type: string): Promise<ImproveSuggestions> {
+    const cleaned = text ? text.trim() : '';
+    const base = cleaned || `Developer building modern software solutions.`;
+
+    let alternatives: string[] = [];
+    if (tone === 'More professional') {
+      alternatives = [
+        `Experienced software engineer focused on designing clean, maintainable, and robust systems.`,
+        `Professional developer specializing in building optimized applications and scalable technical solutions.`,
+        `Technical lead dedicated to engineering high-performance software with modern development practices.`,
+      ];
+    } else if (tone === 'More concise') {
+      alternatives = [
+        `Software engineer building clean and efficient web applications.`,
+        `Developer focused on performance, modular design, and robust code.`,
+        `Full-stack developer engineering modern technical web solutions.`,
+      ];
+    } else if (tone === 'More technical') {
+      alternatives = [
+        `Full-stack engineer optimizing database schema performance, latency profiling, and microservice architectures.`,
+        `Software architect building modular components, CI/CD automated deployments, and reactive state nodes.`,
+        `Technical developer implementing secure APIs, type-safe structures, and high-performance algorithms.`,
+      ];
+    } else if (tone === 'More beginner-friendly') {
+      alternatives = [
+        `Friendly coder who loves building websites and helping people learn tech skills.`,
+        `Web designer creating simple, beautiful, and easy-to-use software applications.`,
+        `Software enthusiast making coding simple and accessible for everyone.`,
+      ];
+    } else if (tone === 'Open-source focused') {
+      alternatives = [
+        `Open-source contributor building collaborative tools and sharing code with the global community.`,
+        `Active open-source developer maintaining packages, reviewing PRs, and fostering documentation.`,
+        `FOSS advocate engineering developer utilities and modular public code repositories.`,
+      ];
+    } else if (tone === 'Job-seeking focused') {
+      alternatives = [
+        `Results-driven software developer with hands-on experience, seeking engineering roles to deliver business value.`,
+        `Passionate engineer looking to join a high-performing product team to scale technical systems.`,
+        `Active candidate specializing in typescript systems engineering, looking for developer opportunities.`,
+      ];
+    } else { // Portfolio focused / fallback
+      alternatives = [
+        `Check out my featured portfolio showcase highlighting engineering designs.`,
+        `Portfolio project showcase highlighting responsive layouts and scalable architectures.`,
+        `Curated workspace repository demonstrating code architecture, test coverage, and documentation.`,
+      ];
+    }
+
+    // Adapt slightly to type
+    alternatives = alternatives.map(alt => {
+      if (type === 'title') {
+        return alt.substring(0, 50);
+      }
+      return alt;
+    });
+
+    return { alternatives };
+  }
 }
 
 /**
@@ -154,6 +219,15 @@ export class SecureAPIAIService implements AIService {
     } catch (err: any) {
       console.warn('Secure AI Profile suggestion call failed. Falling back to local analyzer.', err);
       return this.localService.generateProfileSuggestions(profileData, repoData);
+    }
+  }
+
+  async improveText(text: string, tone: string, type: string): Promise<ImproveSuggestions> {
+    try {
+      return await this.callSecureAPI('improve', { text, tone, type });
+    } catch (err: any) {
+      console.warn('Secure AI rewrite suggestion call failed. Falling back to local analyzer.', err);
+      return this.localService.improveText(text, tone, type);
     }
   }
 }

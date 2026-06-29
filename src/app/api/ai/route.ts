@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const MAX_BODY_BYTES = 50 * 1024;
 
 /** Allowed action identifiers. */
-const ALLOWED_ACTIONS = new Set(['readme', 'roadmap', 'profile']);
+const ALLOWED_ACTIONS = new Set(['readme', 'roadmap', 'profile', 'improve']);
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,6 +61,9 @@ export async function POST(req: NextRequest) {
       prompt = `Analyze this profile: ${JSON.stringify(profileData)} and repo stats: ${JSON.stringify(
         repoData
       )}. Write profile optimization advice. Return strictly a JSON object matching keys: improvedBio, portfolioDescription, githubImprovements (array of strings). Do not include markdown wraps or backticks outside of the JSON syntax itself.`;
+    } else if (action === 'improve') {
+      const { text, tone, type } = payload as any;
+      prompt = `Rewrite the following text: "${text}". Make it fit the tone "${tone}". It belongs to the "${type}" section of a developer GitHub profile README. Output strictly a JSON object with a single key "alternatives" which is an array of 3 distinct, high-quality rephrased alternatives. Do not include markdown wraps or backticks outside of the JSON syntax itself.`;
     }
 
     const response = await fetch(
