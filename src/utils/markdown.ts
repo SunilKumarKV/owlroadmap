@@ -1,4 +1,5 @@
 import { READMEStyleTemplate, GitHubStatsConfig, TechStackConfig, SocialLinksConfig, AchievementsConfig, HeaderConfig, SectionOrderConfig, SupportConfig, QuotesConfig, CustomMarkdownConfig, StandaloneVisitorConfig } from '@/stores/readme-store';
+import { FeaturedProjectsConfig } from '@/types/featured-projects';
 import { TECHNOLOGY_REGISTRY, CATEGORIES, Technology } from './tech-registry';
 import { SOCIAL_PLATFORM_REGISTRY, SocialPlatform } from './social-registry';
 
@@ -24,6 +25,7 @@ export interface READMEData {
   quotes?: QuotesConfig;
   customMarkdown?: CustomMarkdownConfig;
   standaloneVisitor?: StandaloneVisitorConfig;
+  featuredProjects?: FeaturedProjectsConfig;
 }
 
 export interface RoadmapData {
@@ -130,7 +132,11 @@ export function generateReadmeMarkdown(data: READMEData): string {
           break;
 
         case 'projects':
-          sectionMarkdown = data.projects ? `### Projects\n${data.projects}` : '';
+          if (data.featuredProjects && data.featuredProjects.enabled && data.featuredProjects.projects.length > 0) {
+            sectionMarkdown = generateFeaturedProjectsMarkdown(data.featuredProjects);
+          } else {
+            sectionMarkdown = data.projects ? `### Projects\n${data.projects}` : '';
+          }
           break;
 
         case 'support':
@@ -545,6 +551,157 @@ export function generateHeaderMarkdown(config?: HeaderConfig, username?: string)
     if (user) {
       const visitorUrl = `https://komarev.com/ghpvc/?username=${user}&color=green&style=flat`;
       lines.push(`<p align="${alignAttr}">\n  <img src="${visitorUrl}" alt="Visitor Counter" />\n</p>\n`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Generates markdown for the Featured Projects section.
+ * Supports multiple card styles, layouts, and optional badges.
+ */
+export function generateFeaturedProjectsMarkdown(config?: FeaturedProjectsConfig): string {
+  if (!config || !config.enabled || !config.projects || config.projects.length === 0) return '';
+
+  const { projects, cardStyle, layout, sortMode, badgeStyle, showStars, showForks, showLanguage, showTopics } = config;
+
+  // Sort projects
+  let sorted = [...projects];
+  if (sortMode === 'stars') {
+    sorted = sorted.sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
+  } else if (sortMode === 'updated') {
+    sorted = sorted.sort((a, b) => {
+      const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+      const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+      return bDate - aDate;
+    });
+  }
+  // 'manual' keeps original insertion order
+
+  const lines: string[] = [];
+  lines.push('## 📂 Featured Projects');
+  lines.push('');
+
+  if (cardStyle === 'grid' || layout === 'grid') {
+    // GitHub-readme-stats pinned card style: grid of repo cards
+    const cards = sorted.map((p) => {
+      const url = p.repoUrl || p.demoUrl || '#';
+      const displayName = p.title || p.repoName || 'Project';
+      const desc = p.description || '';
+      const badges: string[] = [];
+      if (showLanguage && p.language) {
+        badges.push(`![${p.language}](https://img.shields.io/badge/${encodeURIComponent(p.language)}-blue?style=${badgeStyle})`);
+      }
+      if (showStars && p.stars !== undefined) {
+        badges.push(`![Stars](https://img.shields.io/badge/⭐%20Stars-${p.stars}-yellow?style=${badgeStyle})`);
+      }
+      if (showForks && p.forks !== undefined) {
+        badges.push(`![Forks](https://img.shields.io/badge/🍴%20Forks-${p.forks}-orange?style=${badgeStyle})`);
+      }
+      const badgeRow = badges.length > 0 ? `\n${badges.join(' ')}` : '';
+      return `### [${displayName}](${url})\n${desc}${badgeRow}`;
+    });
+    lines.push(cards.join('\n\n'));
+  } else if (cardStyle === 'gprm') {
+    // GPRM-style pinned repo cards via github-readme-stats
+    const cards = sorted
+      .filter((p) => p.repoName && p.repoUrl)
+      .map((p) => {
+        // Extract "owner/repo" from URL
+        const match = p.repoUrl!.match(/github\.com\/([^/]+\/[^/]+)/);
+        const slug = match ? match[1] : p.repoName;
+        return `<a href="${p.repoUrl}">\n  <img align="center" src="https://github-readme-stats.vercel.app/api/pin/?username=${slug?.split('/')[0]}&repo=${slug?.split('/')[1]}&theme=default" />\n</a>`;
+      });
+
+    if (layout === '2-col') {
+      // Pair cards side-by-side in table rows
+      const pairs: string[] = [];
+      for (let i = 0; i < cards.length; i += 2) {
+        const row = cards.slice(i, i + 2);
+        pairs.push(row.join('\n'));
+      }
+      lines.push('<p align="center">');
+      lines.push(pairs.join('\n\n'));
+      lines.push('</p>');
+    } else {
+      lines.push('<p align="center">');
+      lines.push(cards.join('\n\n'));
+      lines.push('</p>');
+    }
+  } else if (cardStyle === 'compact') {
+    // Compact table format
+    const rows = sorted.map((p) => {
+      const url = p.repoUrl || p.demoUrl || '#';
+      const name = p.title || p.repoName || 'Project';
+      const desc = p.description || '-';
+      const lang = p.language || '-';
+      const stars = p.stars !== undefined ? `⭐ ${p.stars}` : '-';
+      const forks = p.forks !== undefined ? `🍴 ${p.forks}` : '-';
+      return `| [${name}](${url}) | ${desc} | ${lang} | ${stars} | ${forks} |`;
+    });
+    lines.push('| Project | Description | Language | Stars | Forks |');
+    lines.push('|---------|-------------|----------|-------|-------|');
+    lines.push(...rows);
+  } else if (cardStyle === 'minimal') {
+    // Minimal: just bullet list with links
+    const items = sorted.map((p) => {
+      const url = p.repoUrl || p.demoUrl || '#';
+      const name = p.title || p.repoName || 'Project';
+      const desc = p.description ? ` — ${p.description}` : '';
+      const stars = showStars && p.stars !== undefined ? ` ⭐ ${p.stars}` : '';
+      return `- [**${name}**](${url})${desc}${stars}`;
+    });
+    lines.push(...items);
+  } else {
+    // modern (default): rich card blocks with badges
+    const cards = sorted.map((p) => {
+      const url = p.repoUrl || p.demoUrl || '#';
+      const name = p.title || p.repoName || 'Project';
+      const desc = p.description || '';
+      const parts: string[] = [];
+
+      parts.push(`#### [${name}](${url})`);
+      if (desc) parts.push(`> ${desc}`);
+
+      const badges: string[] = [];
+      if (showLanguage && p.language) {
+        badges.push(`![${p.language}](https://img.shields.io/badge/-${encodeURIComponent(p.language)}-blue?style=${badgeStyle})`);
+      }
+      if (showStars && p.stars !== undefined) {
+        badges.push(`![Stars](https://img.shields.io/badge/⭐%20${p.stars}-Stars-yellow?style=${badgeStyle})`);
+      }
+      if (showForks && p.forks !== undefined) {
+        badges.push(`![Forks](https://img.shields.io/badge/🍴%20${p.forks}-Forks-orange?style=${badgeStyle})`);
+      }
+      if (showTopics && p.topics && p.topics.length > 0) {
+        p.topics.slice(0, 4).forEach((topic) => {
+          badges.push(`![${topic}](https://img.shields.io/badge/-${encodeURIComponent(topic)}-lightgrey?style=${badgeStyle})`);
+        });
+      }
+      if (badges.length > 0) parts.push(badges.join(' '));
+      if (p.demoUrl && p.repoUrl) {
+        parts.push(`[🔗 Demo](${p.demoUrl}) · [📦 Repo](${p.repoUrl})`);
+      }
+      if (p.technologies && p.technologies.length > 0) {
+        parts.push(`**Stack:** ${p.technologies.join(', ')}`);
+      }
+      return parts.join('\n');
+    });
+
+    if (layout === '2-col') {
+      // Two-column layout using HTML table
+      const tableRows: string[] = [];
+      for (let i = 0; i < cards.length; i += 2) {
+        const left = cards[i];
+        const right = cards[i + 1] || '';
+        tableRows.push(`<td valign="top" width="50%">\n\n${left}\n\n</td>\n<td valign="top" width="50%">\n\n${right}\n\n</td>`);
+      }
+      lines.push('<table><tr>');
+      lines.push(tableRows.join('</tr>\n<tr>'));
+      lines.push('</tr></table>');
+    } else {
+      lines.push(cards.join('\n\n'));
     }
   }
 

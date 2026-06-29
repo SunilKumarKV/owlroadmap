@@ -1,5 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { FeaturedProjectsConfig, DEFAULT_FEATURED_PROJECTS } from '@/types/featured-projects';
+export type { FeaturedProject, FeaturedProjectsConfig, ProjectCardStyle, ProjectLayout, ProjectSortMode } from '@/types/featured-projects';
+export { DEFAULT_FEATURED_PROJECTS } from '@/types/featured-projects';
 
 export type READMEStyleTemplate = 'minimal' | 'professional' | 'developer' | 'open-source' | 'portfolio';
 
@@ -330,7 +333,8 @@ export type READMEField =
   | 'support'
   | 'quotes'
   | 'customMarkdown'
-  | 'standaloneVisitor';
+  | 'standaloneVisitor'
+  | 'featuredProjects';
 
 interface READMEState {
   name: string;
@@ -360,6 +364,7 @@ interface READMEState {
   quotes: QuotesConfig;
   customMarkdown: CustomMarkdownConfig;
   standaloneVisitor: StandaloneVisitorConfig;
+  featuredProjects: FeaturedProjectsConfig;
   setField: (field: READMEField, value: any) => void;
   setName: (value: string) => void;
   setRole: (value: string) => void;
@@ -388,6 +393,7 @@ interface READMEState {
   setQuotes: (quotes: Partial<QuotesConfig>) => void;
   setCustomMarkdown: (custom: Partial<CustomMarkdownConfig>) => void;
   setStandaloneVisitor: (visitor: Partial<StandaloneVisitorConfig>) => void;
+  setFeaturedProjects: (projects: Partial<FeaturedProjectsConfig>) => void;
   applyPreset: (presetName: string) => void;
   reset: () => void;
 }
@@ -422,6 +428,7 @@ const useREADMEStore = create<READMEState>()(
       quotes: { ...DEFAULT_QUOTES },
       customMarkdown: { ...DEFAULT_CUSTOM_MARKDOWN },
       standaloneVisitor: { ...DEFAULT_STANDALONE_VISITOR },
+      featuredProjects: { ...DEFAULT_FEATURED_PROJECTS },
       setField: (field, value) => set({ [field]: value } as Partial<READMEState>),
       setName: (value) => set({ name: value }),
       setRole: (value) => set({ role: value }),
@@ -526,6 +533,13 @@ const useREADMEStore = create<READMEState>()(
             ...visitor,
           },
         })),
+      setFeaturedProjects: (projects) =>
+        set((state) => ({
+          featuredProjects: {
+            ...state.featuredProjects,
+            ...projects,
+          },
+        })),
       applyPreset: (presetName) =>
         set((state) => {
           const activeIds = PRESETS[presetName] || PRESETS.minimal;
@@ -581,6 +595,7 @@ const useREADMEStore = create<READMEState>()(
           quotes: { ...DEFAULT_QUOTES },
           customMarkdown: { ...DEFAULT_CUSTOM_MARKDOWN },
           standaloneVisitor: { ...DEFAULT_STANDALONE_VISITOR },
+          featuredProjects: { ...DEFAULT_FEATURED_PROJECTS },
         }),
     }),
     { name: 'readme-store' }

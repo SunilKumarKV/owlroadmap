@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown, generateSocialLinksMarkdown, generateAchievementsMarkdown, generateHeaderMarkdown } from '../markdown';
+import { generateReadmeMarkdown, generateRoadmapMarkdown, combineMarkdown, READMEData, generateGithubStatsMarkdown, generateTechStackMarkdown, generateSocialLinksMarkdown, generateAchievementsMarkdown, generateHeaderMarkdown, generateSupportMarkdown, generateQuotesMarkdown, generateStandaloneVisitorMarkdown, generateFeaturedProjectsMarkdown } from '../markdown';
 
 describe('markdown utilities', () => {
   describe('generateReadmeMarkdown', () => {
@@ -436,6 +436,193 @@ describe('markdown utilities', () => {
 
       expect(customIndex).toBeLessThan(aboutIndex);
       expect(aboutIndex).toBeLessThan(supportIndex);
+    });
+  });
+
+  describe('generateFeaturedProjectsMarkdown', () => {
+    const sampleProjects = [
+      {
+        id: 'gh-alpha',
+        source: 'github' as const,
+        repoName: 'alpha',
+        description: 'Alpha project',
+        language: 'TypeScript',
+        stars: 120,
+        forks: 30,
+        topics: ['react', 'nextjs'],
+        repoUrl: 'https://github.com/user/alpha',
+        updatedAt: '2024-05-01T00:00:00Z',
+      },
+      {
+        id: 'gh-beta',
+        source: 'github' as const,
+        repoName: 'beta',
+        description: 'Beta project',
+        language: 'Python',
+        stars: 50,
+        forks: 10,
+        topics: ['ml'],
+        repoUrl: 'https://github.com/user/beta',
+        updatedAt: '2023-01-01T00:00:00Z',
+      },
+    ];
+
+    it('should return empty string when disabled or empty', () => {
+      expect(generateFeaturedProjectsMarkdown(undefined)).toBe('');
+      expect(generateFeaturedProjectsMarkdown({ enabled: false } as any)).toBe('');
+      expect(generateFeaturedProjectsMarkdown({ enabled: true, projects: [] } as any)).toBe('');
+    });
+
+    it('should generate minimal card style (bullet list)', () => {
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: sampleProjects,
+        cardStyle: 'minimal',
+        layout: '1-col',
+        sortMode: 'manual',
+        badgeStyle: 'flat',
+        showStars: true,
+        showForks: false,
+        showLanguage: false,
+        showTopics: false,
+      });
+      expect(result).toContain('## 📂 Featured Projects');
+      expect(result).toContain('[**alpha**](https://github.com/user/alpha)');
+      expect(result).toContain('Alpha project');
+      expect(result).toContain('⭐ 120');
+      // beta is second in manual order
+      const alphaIdx = result.indexOf('alpha');
+      const betaIdx = result.indexOf('beta');
+      expect(alphaIdx).toBeLessThan(betaIdx);
+    });
+
+    it('should generate compact table card style', () => {
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: sampleProjects,
+        cardStyle: 'compact',
+        layout: '1-col',
+        sortMode: 'manual',
+        badgeStyle: 'flat-square',
+        showStars: true,
+        showForks: true,
+        showLanguage: true,
+        showTopics: false,
+      });
+      expect(result).toContain('| Project | Description | Language | Stars | Forks |');
+      expect(result).toContain('[alpha]');
+      expect(result).toContain('TypeScript');
+      expect(result).toContain('⭐ 120');
+      expect(result).toContain('🍴 30');
+    });
+
+    it('should sort by stars descending', () => {
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: sampleProjects,
+        cardStyle: 'minimal',
+        layout: '1-col',
+        sortMode: 'stars',
+        badgeStyle: 'flat',
+        showStars: false,
+        showForks: false,
+        showLanguage: false,
+        showTopics: false,
+      });
+      // alpha (120 stars) should appear before beta (50 stars)
+      const alphaIdx = result.indexOf('alpha');
+      const betaIdx = result.indexOf('beta');
+      expect(alphaIdx).toBeLessThan(betaIdx);
+    });
+
+    it('should sort by recently updated', () => {
+      const recentFirst = [
+        { ...sampleProjects[1], updatedAt: '2025-12-01T00:00:00Z', id: 'beta-recent' }, // recent
+        { ...sampleProjects[0], updatedAt: '2022-01-01T00:00:00Z', id: 'alpha-old' },  // old
+      ];
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: recentFirst,
+        cardStyle: 'minimal',
+        layout: '1-col',
+        sortMode: 'updated',
+        badgeStyle: 'flat',
+        showStars: false,
+        showForks: false,
+        showLanguage: false,
+        showTopics: false,
+      });
+      // beta (2025) should appear before alpha (2022)
+      const betaIdx = result.indexOf('beta');
+      const alphaIdx = result.indexOf('alpha');
+      expect(betaIdx).toBeLessThan(alphaIdx);
+    });
+
+    it('should generate modern card style with badges and topics', () => {
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: [sampleProjects[0]],
+        cardStyle: 'modern',
+        layout: '1-col',
+        sortMode: 'manual',
+        badgeStyle: 'flat-square',
+        showStars: true,
+        showForks: true,
+        showLanguage: true,
+        showTopics: true,
+      });
+      expect(result).toContain('#### [alpha](https://github.com/user/alpha)');
+      expect(result).toContain('Alpha project');
+      expect(result).toContain('TypeScript');
+      expect(result).toContain('react');
+      expect(result).toContain('nextjs');
+    });
+
+    it('should generate gprm card style with img tags for github repos', () => {
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: [sampleProjects[0]],
+        cardStyle: 'gprm',
+        layout: '2-col',
+        sortMode: 'manual',
+        badgeStyle: 'flat',
+        showStars: false,
+        showForks: false,
+        showLanguage: false,
+        showTopics: false,
+      });
+      expect(result).toContain('<a href="https://github.com/user/alpha">');
+      expect(result).toContain('github-readme-stats.vercel.app/api/pin/?username=user&repo=alpha');
+    });
+
+    it('should include manual project with technologies and demo link', () => {
+      const manualProject = {
+        id: 'manual-1',
+        source: 'manual' as const,
+        title: 'My Portfolio',
+        description: 'A portfolio site',
+        repoUrl: 'https://github.com/user/portfolio',
+        demoUrl: 'https://portfolio.example.com',
+        language: 'React',
+        technologies: ['React', 'Tailwind'],
+      };
+      const result = generateFeaturedProjectsMarkdown({
+        enabled: true,
+        projects: [manualProject],
+        cardStyle: 'modern',
+        layout: '1-col',
+        sortMode: 'manual',
+        badgeStyle: 'flat-square',
+        showStars: false,
+        showForks: false,
+        showLanguage: true,
+        showTopics: false,
+      });
+      expect(result).toContain('[My Portfolio]');
+      expect(result).toContain('A portfolio site');
+      expect(result).toContain('**Stack:** React, Tailwind');
+      expect(result).toContain('🔗 Demo');
+      expect(result).toContain('📦 Repo');
     });
   });
 });
