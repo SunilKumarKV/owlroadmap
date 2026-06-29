@@ -1,15 +1,39 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Reorder } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import { 
+  Search, Eye, Code, Edit, GripVertical, Maximize2, Minimize2, Copy, Download, RefreshCw, 
+  ChevronLeft, ChevronRight, Layout, Moon, Sun, PanelLeftClose, PanelLeft, PanelRightClose, 
+  PanelRight, FolderPlus, ArrowLeftRight
+} from 'lucide-react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
 import Textarea from '@/components/Textarea';
 import useReadmeStore, { READMEStyleTemplate, GitHubStatsConfig, TechStackConfig, SocialLinksConfig, SectionId, FeaturedProjectsConfig, FeaturedProject } from '@/stores/readme-store';
+import useWorkspaceStore from '@/stores/workspace-store';
+import usePanelStore from '@/stores/panel-store';
+import useThemeStore from '@/stores/theme-store';
 import { TECHNOLOGY_REGISTRY, CATEGORIES, Technology } from '@/utils/tech-registry';
 import { SOCIAL_PLATFORM_REGISTRY, SOCIAL_CATEGORIES, SocialPlatform } from '@/utils/social-registry';
 import { fetchGithubProfile, fetchGithubRepos } from '@/utils/github-api';
+import { generateReadmeMarkdown } from '@/utils/markdown';
+
+// Dynamically import the Markdown preview component to disable SSR
+const MDMarkdown = dynamic(
+  () => import('@uiw/react-md-editor').then((mod) => mod.default.Markdown),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="animate-pulse bg-gray-100 dark:bg-gray-800/40 rounded-md h-[400px] flex items-center justify-center text-xs text-gray-400">
+        Loading markdown preview...
+      </div>
+    ),
+  }
+);
+
 
 const READMEBuilderPage = () => {
   const searchParams = useSearchParams();
@@ -80,10 +104,190 @@ const READMEBuilderPage = () => {
     technologies: [],
   });
   const [manualTechInput, setManualTechInput] = useState('');
-
   const [techSearch, setTechSearch] = useState('');
   const [activeTechCategory, setActiveTechCategory] = useState<'All' | 'Languages' | 'Frontend' | 'Backend' | 'Database' | 'DevOps & Cloud' | 'Tools'>('All');
   const [socialSearch, setSocialSearch] = useState('');
+
+  // ── Multi-Panel workspace state & selectors ────────────────────────────────
+  const {
+    builderCollapsed,
+    previewCollapsed,
+    markdownCollapsed,
+    builderSize,
+    previewSize,
+    markdownSize,
+    fullscreenPanel,
+    mobileViewMode,
+    setBuilderCollapsed,
+    setPreviewCollapsed,
+    setMarkdownCollapsed,
+    setSizes,
+    setFullscreenPanel,
+    setMobileViewMode,
+    resetLayout,
+  } = usePanelStore();
+
+  const {
+    workspaces,
+    activeWorkspaceId,
+    createWorkspace,
+    setActiveWorkspaceId,
+  } = useWorkspaceStore();
+
+  const { theme, setTheme } = useThemeStore();
+
+  // Search input for filtering README section builders
+  const [sectionsSearchQuery, setSectionsSearchQuery] = useState('');
+
+  // Reactive and editable markdown source state
+  const readmeState = useReadmeStore();
+  const [localMarkdown, setLocalMarkdown] = useState('');
+  const prevMarkdownTextRef = useRef('');
+
+  useEffect(() => {
+    const generated = generateReadmeMarkdown(readmeState);
+    if (generated !== prevMarkdownTextRef.current) {
+      setLocalMarkdown(generated);
+      prevMarkdownTextRef.current = generated;
+    }
+  }, [readmeState]);
+
+  // Synchronized scrolling logic
+  const editorScrollRef = useRef<HTMLTextAreaElement>(null);
+  const previewScrollRef = useRef<HTMLDivElement>(null);
+  const isScrollingEditor = useRef(false);
+  const isScrollingPreview = useRef(false);
+
+  const handleEditorScroll = () => {
+    if (isScrollingPreview.current) return;
+    isScrollingEditor.current = true;
+    const editor = editorScrollRef.current;
+    const preview = previewScrollRef.current;
+    if (editor && preview) {
+      const editorScrollable = editor.scrollHeight - editor.clientHeight;
+      if (editorScrollable > 0) {
+        const percentage = editor.scrollTop / editorScrollable;
+        const previewScrollable = preview.scrollHeight - preview.clientHeight;
+        preview.scrollTop = percentage * previewScrollable;
+      }
+    }
+    setTimeout(() => {
+      isScrollingEditor.current = false;
+    }, 50);
+  };
+
+  const handlePreviewScroll = () => {
+    if (isScrollingEditor.current) return;
+    isScrollingPreview.current = true;
+    const editor = editorScrollRef.current;
+    const preview = previewScrollRef.current;
+    if (editor && preview) {
+      const previewScrollable = preview.scrollHeight - preview.clientHeight;
+      if (previewScrollable > 0) {
+        const percentage = preview.scrollTop / previewScrollable;
+        const editorScrollable = editor.scrollHeight - editor.clientHeight;
+        editor.scrollTop = percentage * editorScrollable;
+      }
+    }
+    setTimeout(() => {
+      isScrollingPreview.current = false;
+    }, 50);
+  };
+
+  // Copy & Download helpers
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(localMarkdown);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      useReadmeStore.getState().incrementReadmeExports();
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([localMarkdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'README.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    useReadmeStore.getState().incrementReadmeExports();
+  };
+
+  // Resizing mouse/pointer drag handler
+  const startResizing = (e: React.PointerEvent<HTMLDivElement>, handle: 'left' | 'right') => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startBuilderSize = builderSize;
+    const startPreviewSize = previewSize;
+    const startMarkdownSize = markdownSize;
+    const container = e.currentTarget.parentElement;
+    if (!container) return;
+    const containerWidth = container.getBoundingClientRect().width;
+
+    const handlePointerMove = (moveEvent: PointerEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      const deltaPct = (deltaX / containerWidth) * 100;
+
+      if (handle === 'left') {
+        const newBuilder = Math.max(15, Math.min(60, startBuilderSize + deltaPct));
+        const newPreview = Math.max(15, startPreviewSize - (newBuilder - startBuilderSize));
+        setSizes(newBuilder, newPreview, startMarkdownSize);
+      } else {
+        const newPreview = Math.max(15, Math.min(60, startPreviewSize + deltaPct));
+        const newMarkdown = Math.max(15, startMarkdownSize - (newPreview - startPreviewSize));
+        setSizes(startBuilderSize, newPreview, newMarkdown);
+      }
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  // Helper to compute display widths based on sizes, collapsed, and fullscreen settings
+  const getPanelWidths = () => {
+    if (fullscreenPanel) {
+      return {
+        builder: fullscreenPanel === 'builder' ? '100%' : '0%',
+        preview: fullscreenPanel === 'preview' ? '100%' : '0%',
+        markdown: fullscreenPanel === 'markdown' ? '100%' : '0%',
+      };
+    }
+
+    let sum = 0;
+    if (!builderCollapsed) sum += builderSize;
+    if (!previewCollapsed) sum += previewSize;
+    if (!markdownCollapsed) sum += markdownSize;
+
+    if (sum === 0) {
+      const visibleCount = [!builderCollapsed, !previewCollapsed, !markdownCollapsed].filter(Boolean).length;
+      const defaultVal = visibleCount > 0 ? 100 / visibleCount : 33.3;
+      return {
+        builder: !builderCollapsed ? `${defaultVal}%` : '0%',
+        preview: !previewCollapsed ? `${defaultVal}%` : '0%',
+        markdown: !markdownCollapsed ? `${defaultVal}%` : '0%',
+      };
+    }
+
+    return {
+      builder: !builderCollapsed ? `${(builderSize / sum) * 100}%` : '0%',
+      preview: !previewCollapsed ? `${(previewSize / sum) * 100}%` : '0%',
+      markdown: !markdownCollapsed ? `${(markdownSize / sum) * 100}%` : '0%',
+    };
+  };
+
+  const panelWidths = getPanelWidths();
 
   useEffect(() => {
     if (!username) return;
@@ -179,244 +383,8 @@ const READMEBuilderPage = () => {
     setHeader,
   ]);
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 bg-gray-100 dark:bg-[#16161a] transition-colors duration-200">
-      <div className="w-full max-w-7xl">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-extrabold text-black dark:text-white tracking-tight sm:text-5xl">
-            Create Your GitHub README
-          </h1>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-            Visually assemble, customize, and order your profile sections in real time
-          </p>
-        </div>
-
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-md mb-6 mx-auto" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-
-        {/* Global Template Selector */}
-        <div className="w-full max-w-lg mx-auto mb-8 p-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm">
-          <label htmlFor="readme-template-select" className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Default Style Template</label>
-          <select
-            id="readme-template-select"
-            value={template}
-            onChange={(e) => setTemplate(e.target.value as READMEStyleTemplate)}
-            className="w-full px-4 py-2.5 rounded-md border border-gray-300 dark:bg-[#1e1e1e] dark:text-white dark:border-gray-600 focus:border-blue-500 focus:ring-2 ring-blue-500 transition duration-200"
-          >
-            <option value="minimal">Minimal</option>
-            <option value="professional">Professional</option>
-            <option value="developer">Developer</option>
-            <option value="open-source">Open Source</option>
-            <option value="portfolio">Portfolio</option>
-          </select>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Section Manager Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <div className="p-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm space-y-4 lg:sticky lg:top-8">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
-                  🗂️ Section Manager
-                </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                  Drag sections to reorder, toggle visibility, and collapse settings panels.
-                </p>
-              </div>
-
-              {/* Layout Presets */}
-              <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                <label className="block text-2xs uppercase tracking-wider font-bold text-gray-400">
-                  Apply Preset Layout
-                </label>
-                <div className="flex flex-wrap gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('minimal')}
-                    className="px-2.5 py-1 text-2xs font-semibold rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer capitalize"
-                  >
-                    Minimal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('modern')}
-                    className="px-2.5 py-1 text-2xs font-semibold rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer capitalize"
-                  >
-                    Modern
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('developer')}
-                    className="px-2.5 py-1 text-2xs font-semibold rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer capitalize"
-                  >
-                    Developer
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('open-source')}
-                    className="px-2.5 py-1 text-2xs font-semibold rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer capitalize"
-                  >
-                    Open Source
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => applyPreset('gprm-style')}
-                    className="px-2.5 py-1 text-2xs font-semibold rounded bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer capitalize"
-                  >
-                    GPRM Style
-                  </button>
-                </div>
-              </div>
-
-              {/* Drag-and-Drop Reorder Group */}
-              <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
-                <Reorder.Group
-                  axis="y"
-                  values={sections.order}
-                  onReorder={(newOrder) => setSections({ order: newOrder })}
-                  className="space-y-2"
-                >
-                  {sections.order.map((sectionId) => {
-                    const sectionConfig = sections.sections[sectionId];
-                    if (!sectionConfig) return null;
-
-                    const handleToggle = () => {
-                      setSections({
-                        sections: {
-                          ...sections.sections,
-                          [sectionId]: { ...sectionConfig, enabled: !sectionConfig.enabled },
-                        },
-                      });
-                    };
-
-                    const handleCollapse = () => {
-                      setSections({
-                        sections: {
-                          ...sections.sections,
-                          [sectionId]: { ...sectionConfig, collapsed: !sectionConfig.collapsed },
-                        },
-                      });
-                    };
-
-                    const moveSection = (dir: 'up' | 'down') => {
-                      const idx = sections.order.indexOf(sectionId);
-                      if (dir === 'up' && idx === 0) return;
-                      if (dir === 'down' && idx === sections.order.length - 1) return;
-                      const newOrder = [...sections.order];
-                      const swapIdx = dir === 'up' ? idx - 1 : idx + 1;
-                      const temp = newOrder[idx];
-                      newOrder[idx] = newOrder[swapIdx];
-                      newOrder[swapIdx] = temp;
-                      setSections({ order: newOrder });
-                    };
-
-                    return (
-                      <Reorder.Item
-                        key={sectionId}
-                        value={sectionId}
-                        className={`flex items-center justify-between p-3 rounded-md border transition duration-150 cursor-grab active:cursor-grabbing select-none ${
-                          sectionConfig.enabled
-                            ? 'border-blue-200 dark:border-blue-900 bg-blue-50/10 dark:bg-blue-950/5'
-                            : 'border-gray-100 dark:border-gray-800 opacity-60 bg-gray-50/30'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-gray-400 cursor-grab">⋮⋮</span>
-                          <input
-                            type="checkbox"
-                            checked={sectionConfig.enabled}
-                            onChange={handleToggle}
-                            className="rounded text-blue-600 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 cursor-pointer"
-                            aria-label={`Toggle ${sectionConfig.name}`}
-                          />
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                            {sectionConfig.name}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => moveSection('up')}
-                            disabled={sections.order.indexOf(sectionId) === 0}
-                            className="p-1 text-2xs rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 disabled:opacity-20 cursor-pointer"
-                            aria-label={`Move ${sectionConfig.name} up`}
-                          >
-                            ▲
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveSection('down')}
-                            disabled={sections.order.indexOf(sectionId) === sections.order.length - 1}
-                            className="p-1 text-2xs rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 disabled:opacity-20 cursor-pointer"
-                            aria-label={`Move ${sectionConfig.name} down`}
-                          >
-                            ▼
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleCollapse}
-                            className="p-1 text-xs text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded cursor-pointer"
-                            aria-label={sectionConfig.collapsed ? `Expand ${sectionConfig.name}` : `Collapse ${sectionConfig.name}`}
-                          >
-                            {sectionConfig.collapsed ? '▶' : '▼'}
-                          </button>
-                        </div>
-                      </Reorder.Item>
-                    );
-                  })}
-                </Reorder.Group>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Section Forms */}
-          <div className="lg:col-span-2 space-y-6">
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-              {sections.order.map((sectionId) => {
-                const sectionConfig = sections.sections[sectionId];
-                if (!sectionConfig) return null;
-
-                // Expand banner if collapsed
-                if (sectionConfig.collapsed) {
-                  return (
-                    <div
-                      key={sectionId}
-                      className="p-4 bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                          {sectionConfig.name} Configuration Panel
-                        </span>
-                        {!sectionConfig.enabled && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-gray-100 dark:bg-gray-800 text-gray-400">
-                            Disabled
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSections({
-                            sections: {
-                              ...sections.sections,
-                              [sectionId]: { ...sectionConfig, collapsed: false },
-                            },
-                          });
-                        }}
-                        className="text-xs font-semibold text-blue-500 hover:text-blue-600 cursor-pointer"
-                      >
-                        Expand Form
-                      </button>
-                    </div>
-                  );
-                }
-
-                // Render specific section form block
-                switch (sectionId) {
+  const renderSectionConfigForm = (sectionId: SectionId) => {
+    switch (sectionId) {
                   case 'header':
                     return (
                       <div key={sectionId} className="p-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm space-y-4">
@@ -2165,18 +2133,555 @@ const READMEBuilderPage = () => {
                   default:
                     return null;
                 }
-              })}
-            </form>
+  };
 
-            {/* Sticky Actions Footer */}
-            <div className="flex flex-wrap gap-4 mt-8 justify-center p-6 bg-white dark:bg-[#121212] border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm">
-              <Button href="/theme" variant="secondary">Theme Studio</Button>
-              <Button href="/roadmap-builder" variant="secondary">Create Roadmap</Button>
-              <Button href="/preview" variant="primary">Preview Markdown</Button>
-              <Button onClick={reset} variant="secondary">Clear</Button>
-            </div>
-          </div>
+  return (
+    <div className="flex flex-col h-screen w-screen bg-gray-50 dark:bg-[#0c0c0e] text-black dark:text-white transition-colors duration-200 overflow-hidden">
+      
+      {/* ── Global Toolbar / Header ── */}
+      <header className="flex flex-wrap items-center justify-between px-6 py-2.5 bg-white dark:bg-[#121212] border-b border-gray-200 dark:border-gray-800 z-50 flex-shrink-0 gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg font-black tracking-tight text-blue-600 dark:text-blue-400 flex items-center gap-1.5 select-none">
+            🦉 OwlRoadmap <span className="text-2xs font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/35 text-blue-700 dark:text-blue-300">v1.1.0</span>
+          </span>
         </div>
+
+        {/* Toolbar Controls */}
+        <div className="flex items-center gap-4 flex-wrap sm:flex-nowrap">
+          {workspaces.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Workspace:</span>
+              <select
+                value={activeWorkspaceId || ''}
+                onChange={(e) => {
+                  if (e.target.value === 'new-workspace-trigger') {
+                    const name = prompt('Enter workspace name:');
+                    if (name && name.trim()) {
+                      createWorkspace(name.trim(), 'readme');
+                    }
+                  } else {
+                    setActiveWorkspaceId(e.target.value);
+                  }
+                }}
+                className="px-2 py-1 text-xs rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus:border-blue-500 focus:outline-none cursor-pointer"
+              >
+                {workspaces.map((w) => (
+                  <option key={w.id} value={w.id}>{w.name}</option>
+                ))}
+                <option value="new-workspace-trigger">+ Create New...</option>
+              </select>
+            </div>
+          )}
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Template:</span>
+            <select
+              value={template}
+              onChange={(e) => setTemplate(e.target.value as READMEStyleTemplate)}
+              className="px-2 py-1 text-xs rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus:border-blue-500 focus:outline-none cursor-pointer"
+            >
+              <option value="minimal">Minimal</option>
+              <option value="professional">Professional</option>
+              <option value="developer">Developer</option>
+              <option value="open-source">Open Source</option>
+              <option value="portfolio">Portfolio</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Theme:</span>
+            <select
+              value={theme}
+              onChange={(e) => setTheme(e.target.value as any)}
+              className="px-2 py-1 text-xs rounded border border-gray-200 dark:bg-gray-800 dark:border-gray-700 focus:border-blue-500 focus:outline-none cursor-pointer"
+            >
+              <option value="minimal">Minimal Theme</option>
+              <option value="dark">Dark Theme</option>
+              <option value="gradient">Gradient Theme</option>
+              <option value="terminal">Terminal Theme</option>
+            </select>
+          </div>
+
+          <button
+            onClick={resetLayout}
+            className="p-1 rounded hover:bg-gray-150 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 flex items-center gap-1 cursor-pointer transition text-xs"
+            title="Reset panel layouts to defaults"
+          >
+            <Layout className="h-3.5 w-3.5" />
+            <span className="hidden md:inline font-semibold">Reset View</span>
+          </button>
+
+          <Button href="/dashboard" variant="secondary" className="!py-1 !px-2.5 !text-xs">
+            Dashboard
+          </Button>
+        </div>
+      </header>
+
+      {/* ── Mobile View Tabs Header (visible below lg screen) ── */}
+      <div className="lg:hidden flex border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#121212] z-40 flex-shrink-0">
+        <button
+          onClick={() => setMobileViewMode('builder')}
+          className={`flex-1 py-2.5 text-center text-xs font-semibold border-b-2 cursor-pointer transition-all ${
+            mobileViewMode === 'builder'
+              ? 'border-blue-500 text-blue-500 bg-blue-500/5'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          ✏️ Section Builder
+        </button>
+        <button
+          onClick={() => setMobileViewMode('preview')}
+          className={`flex-1 py-2.5 text-center text-xs font-semibold border-b-2 cursor-pointer transition-all ${
+            mobileViewMode === 'preview'
+              ? 'border-blue-500 text-blue-500 bg-blue-500/5'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          👁️ Live Preview
+        </button>
+        <button
+          onClick={() => setMobileViewMode('markdown')}
+          className={`flex-1 py-2.5 text-center text-xs font-semibold border-b-2 cursor-pointer transition-all ${
+            mobileViewMode === 'markdown'
+              ? 'border-blue-500 text-blue-500 bg-blue-500/5'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          📝 Markdown Output
+        </button>
+      </div>
+
+      {/* ── Main Workspace Body ── */}
+      <div className="flex flex-1 overflow-hidden relative w-full">
+        {error && (
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded shadow-md z-50 text-xs flex items-center gap-2">
+            <span>{error}</span>
+            <button onClick={() => setError(null)} className="font-bold hover:text-red-900 cursor-pointer">✕</button>
+          </div>
+        )}
+
+        {/* Desktop Split Panels */}
+        <div className="hidden lg:flex flex-1 w-full h-full overflow-hidden select-none">
+          
+          {/* 1. Panel: Section Builder */}
+          {builderCollapsed && !fullscreenPanel ? (
+            <div
+              onClick={() => setBuilderCollapsed(false)}
+              className="w-9 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/40 flex flex-col items-center py-4 cursor-pointer select-none gap-2 flex-shrink-0 transition"
+              title="Expand Section Builder"
+            >
+              <PanelLeft className="h-4 w-4 text-gray-400" />
+              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mt-4 [writing-mode:vertical-lr] rotate-180">Section Builder</span>
+            </div>
+          ) : (
+            (fullscreenPanel === null || fullscreenPanel === 'builder') && (
+              <div
+                style={{ width: panelWidths.builder }}
+                className="flex flex-col h-full bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 overflow-hidden flex-shrink-0"
+              >
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/10 flex-shrink-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5 select-none">
+                    🗂️ Section Builder
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setFullscreenPanel(fullscreenPanel === 'builder' ? null : 'builder')}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title={fullscreenPanel === 'builder' ? "Minimize Panel" : "Maximize Panel"}
+                    >
+                      {fullscreenPanel === 'builder' ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => setBuilderCollapsed(true)}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title="Collapse Panel"
+                    >
+                      <PanelLeftClose className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Panel Scrollable Body */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-editor-scrollbar">
+                  
+                  {/* Section list (Section Manager) */}
+                  <div className="p-4 bg-gray-50 dark:bg-gray-900/25 border border-gray-200/80 dark:border-gray-800/80 rounded-lg space-y-3.5">
+                    <div className="flex items-center justify-between gap-4">
+                      <h4 className="text-2xs font-extrabold uppercase tracking-wider text-gray-400 dark:text-gray-500">Section Manager</h4>
+                      <div className="relative flex-1 max-w-44">
+                        <Search className="absolute left-2 top-2 h-3.5 w-3.5 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Filter sections..."
+                          value={sectionsSearchQuery}
+                          onChange={(e) => setSectionsSearchQuery(e.target.value)}
+                          className="pl-7 pr-2 py-1 w-full text-[11px] rounded border border-gray-200 dark:bg-[#1e1e1e] dark:border-gray-700 focus:border-blue-500 focus:outline-none transition"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Presets Grid */}
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Layout Presets</span>
+                      <div className="flex flex-wrap gap-1">
+                        {['minimal', 'modern', 'developer', 'open-source', 'gprm-style'].map((pres) => (
+                          <button
+                            key={pres}
+                            type="button"
+                            onClick={() => applyPreset(pres)}
+                            className="px-2 py-0.5 text-[10px] font-semibold rounded bg-gray-150 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-755 text-gray-600 dark:text-gray-300 transition capitalize cursor-pointer"
+                          >
+                            {pres.replace('-style', '').replace('gprm', 'GPRM')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Reorder sections */}
+                    <Reorder.Group
+                      axis="y"
+                      values={sections.order}
+                      onReorder={(newOrder) => setSections({ order: newOrder })}
+                      className="space-y-1"
+                    >
+                      {sections.order
+                        .filter(id => {
+                          const config = sections.sections[id];
+                          return !sectionsSearchQuery || (config && config.name.toLowerCase().includes(sectionsSearchQuery.toLowerCase()));
+                        })
+                        .map((sectionId) => {
+                          const sectionConfig = sections.sections[sectionId];
+                          if (!sectionConfig) return null;
+
+                          return (
+                            <Reorder.Item
+                              key={sectionId}
+                              value={sectionId}
+                              className={`flex items-center justify-between p-2 rounded border text-xs select-none transition cursor-grab active:cursor-grabbing ${
+                                sectionConfig.enabled
+                                  ? 'border-blue-100 dark:border-blue-900 bg-blue-500/5'
+                                  : 'border-gray-200 dark:border-gray-800 opacity-60 bg-gray-55/20'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2">
+                                <span className="text-gray-400 font-bold">⋮⋮</span>
+                                <input
+                                  type="checkbox"
+                                  checked={sectionConfig.enabled}
+                                  onChange={() => setSections({
+                                    sections: {
+                                      ...sections.sections,
+                                      [sectionId]: { ...sectionConfig, enabled: !sectionConfig.enabled }
+                                    }
+                                  })}
+                                  className="rounded text-blue-600 focus:ring-blue-500 dark:bg-gray-850 cursor-pointer"
+                                />
+                                <span className="font-semibold text-gray-750 dark:text-gray-200">{sectionConfig.name}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setSections({
+                                  sections: {
+                                    ...sections.sections,
+                                    [sectionId]: { ...sectionConfig, collapsed: !sectionConfig.collapsed }
+                                  }
+                                })}
+                                className="text-[10px] text-blue-500 hover:text-blue-600 font-semibold cursor-pointer"
+                              >
+                                {sectionConfig.collapsed ? 'Expand' : 'Collapse'}
+                              </button>
+                            </Reorder.Item>
+                          );
+                        })}
+                    </Reorder.Group>
+                  </div>
+
+                  {/* Section forms lists */}
+                  <div className="space-y-4">
+                    {sections.order.map((sectionId) => {
+                      const sectionConfig = sections.sections[sectionId];
+                      if (!sectionConfig) return null;
+
+                      // Search filter matching
+                      if (sectionsSearchQuery && !sectionConfig.name.toLowerCase().includes(sectionsSearchQuery.toLowerCase())) {
+                        return null;
+                      }
+
+                      // Render collapsed panel placeholder
+                      if (sectionConfig.collapsed) {
+                        return (
+                          <div
+                            key={sectionId}
+                            className="p-3 bg-gray-50/50 dark:bg-[#151518] border border-gray-200 dark:border-gray-800 rounded-lg flex items-center justify-between text-xs"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-gray-700 dark:text-gray-300">{sectionConfig.name} Configuration Panel</span>
+                              {!sectionConfig.enabled && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-150 dark:bg-gray-800 text-gray-400 uppercase tracking-wide">Disabled</span>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setSections({
+                                sections: {
+                                  ...sections.sections,
+                                  [sectionId]: { ...sectionConfig, collapsed: false }
+                                }
+                              })}
+                              className="text-2xs text-blue-500 hover:text-blue-650 font-bold cursor-pointer"
+                            >
+                              Expand Panel
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      // Render builder forms
+                      return (
+                        <div key={sectionId} className="relative">
+                          {renderSectionConfigForm(sectionId)}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Separator 1 */}
+          {!builderCollapsed && !previewCollapsed && !fullscreenPanel && (
+            <div
+              onPointerDown={(e) => startResizing(e, 'left')}
+              className="w-1.5 bg-transparent hover:bg-blue-500/25 transition cursor-col-resize h-full flex-shrink-0 z-30 flex items-center justify-center"
+            >
+              <div className="w-[2px] h-10 bg-gray-300 dark:bg-gray-700 rounded-full" />
+            </div>
+          )}
+
+          {/* 2. Panel: Live Preview */}
+          {previewCollapsed && !fullscreenPanel ? (
+            <div
+              onClick={() => setPreviewCollapsed(false)}
+              className="w-9 bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-gray-800/40 flex flex-col items-center py-4 cursor-pointer select-none gap-2 flex-shrink-0 transition"
+              title="Expand Live Preview"
+            >
+              <Eye className="h-4 w-4 text-gray-400" />
+              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mt-4 [writing-mode:vertical-lr] rotate-180">Live Preview</span>
+            </div>
+          ) : (
+            (fullscreenPanel === null || fullscreenPanel === 'preview') && (
+              <div
+                style={{ width: panelWidths.preview }}
+                className="flex flex-col h-full bg-white dark:bg-[#121212] border-r border-gray-200 dark:border-gray-800 overflow-hidden flex-shrink-0"
+              >
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/10 flex-shrink-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5 select-none">
+                    👁️ Live Preview
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setFullscreenPanel(fullscreenPanel === 'preview' ? null : 'preview')}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title={fullscreenPanel === 'preview' ? "Minimize Panel" : "Maximize Panel"}
+                    >
+                      {fullscreenPanel === 'preview' ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => setPreviewCollapsed(true)}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title="Collapse Panel"
+                    >
+                      <PanelLeftClose className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Markdown preview renderer */}
+                <div
+                  ref={previewScrollRef}
+                  onScroll={handlePreviewScroll}
+                  className="flex-1 overflow-y-auto p-8 bg-white dark:bg-[#101012] custom-editor-scrollbar"
+                >
+                  <div data-color-mode={theme === 'minimal' ? 'light' : 'dark'} className="theme-preview-container">
+                    <MDMarkdown source={localMarkdown} style={{ background: 'transparent', color: 'inherit' }} />
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Separator 2 */}
+          {!previewCollapsed && !markdownCollapsed && !fullscreenPanel && (
+            <div
+              onPointerDown={(e) => startResizing(e, 'right')}
+              className="w-1.5 bg-transparent hover:bg-blue-500/25 transition cursor-col-resize h-full flex-shrink-0 z-30 flex items-center justify-center"
+            >
+              <div className="w-[2px] h-10 bg-gray-300 dark:bg-gray-700 rounded-full" />
+            </div>
+          )}
+
+          {/* 3. Panel: Raw Markdown Output */}
+          {markdownCollapsed && !fullscreenPanel ? (
+            <div
+              onClick={() => setMarkdownCollapsed(false)}
+              className="w-9 bg-white dark:bg-[#121212] hover:bg-gray-100 dark:hover:bg-gray-800/40 flex flex-col items-center py-4 cursor-pointer select-none gap-2 flex-shrink-0 transition"
+              title="Expand Raw Markdown"
+            >
+              <Code className="h-4 w-4 text-gray-400" />
+              <span className="text-[10px] font-bold tracking-widest text-gray-400 uppercase mt-4 [writing-mode:vertical-lr] rotate-180">Raw Markdown</span>
+            </div>
+          ) : (
+            (fullscreenPanel === null || fullscreenPanel === 'markdown') && (
+              <div
+                style={{ width: panelWidths.markdown }}
+                className="flex flex-col h-full bg-white dark:bg-[#121212] overflow-hidden flex-shrink-0"
+              >
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/10 flex-shrink-0">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5 select-none">
+                    📝 Raw Markdown
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleCopy}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-2xs font-extrabold rounded bg-blue-600 hover:bg-blue-700 text-white transition cursor-pointer"
+                    >
+                      <Copy className="h-3 w-3" />
+                      {copied ? 'Copied!' : 'Copy'}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-1.5 px-2.5 py-1 text-2xs font-extrabold rounded bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition cursor-pointer"
+                    >
+                      <Download className="h-3 w-3" />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => setFullscreenPanel(fullscreenPanel === 'markdown' ? null : 'markdown')}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title={fullscreenPanel === 'markdown' ? "Minimize Panel" : "Maximize Panel"}
+                    >
+                      {fullscreenPanel === 'markdown' ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                    </button>
+                    <button
+                      onClick={() => setMarkdownCollapsed(true)}
+                      className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-850 text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                      title="Collapse Panel"
+                    >
+                      <PanelRightClose className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Editor Textarea */}
+                <div className="flex-1 bg-gray-950 p-4 relative h-full">
+                  <textarea
+                    ref={editorScrollRef}
+                    onScroll={handleEditorScroll}
+                    value={localMarkdown}
+                    onChange={(e) => setLocalMarkdown(e.target.value)}
+                    placeholder="Type or tweak generated markdown here..."
+                    className="w-full h-full font-mono text-xs text-slate-300 bg-transparent resize-none border-none outline-none focus:ring-0 leading-relaxed custom-editor-scrollbar overflow-y-auto raw-markdown-editor"
+                  />
+                </div>
+              </div>
+            )
+          )}
+
+        </div>
+
+        {/* ── Mobile Layout Columns (visible below lg screen) ── */}
+        <div className="lg:hidden flex-1 w-full h-full overflow-hidden flex flex-col">
+          {mobileViewMode === 'builder' && (
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-white dark:bg-[#121212] custom-editor-scrollbar">
+              <div className="p-4 bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-800 rounded-lg space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Section Manager</h4>
+                <Reorder.Group
+                  axis="y"
+                  values={sections.order}
+                  onReorder={(newOrder) => setSections({ order: newOrder })}
+                  className="space-y-1"
+                >
+                  {sections.order.map((sectionId) => {
+                    const sectionConfig = sections.sections[sectionId];
+                    if (!sectionConfig) return null;
+                    return (
+                      <div
+                        key={sectionId}
+                        className={`flex items-center justify-between p-2 rounded border text-xs select-none ${
+                          sectionConfig.enabled ? 'border-blue-200 dark:border-blue-900 bg-blue-500/5' : 'border-gray-200 dark:border-gray-800 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={sectionConfig.enabled}
+                            onChange={() => setSections({
+                              sections: { ...sections.sections, [sectionId]: { ...sectionConfig, enabled: !sectionConfig.enabled } }
+                            })}
+                            className="rounded text-blue-600 cursor-pointer"
+                          />
+                          <span>{sectionConfig.name}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Reorder.Group>
+              </div>
+
+              <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                {sections.order.map((sectionId) => {
+                  const sectionConfig = sections.sections[sectionId];
+                  if (!sectionConfig || !sectionConfig.enabled) return null;
+                  return (
+                    <div key={sectionId}>
+                      {renderSectionConfigForm(sectionId)}
+                    </div>
+                  );
+                })}
+              </form>
+            </div>
+          )}
+
+          {mobileViewMode === 'preview' && (
+            <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-[#101012] custom-editor-scrollbar">
+              <div data-color-mode={theme === 'minimal' ? 'light' : 'dark'} className="theme-preview-container">
+                <MDMarkdown source={localMarkdown} style={{ background: 'transparent', color: 'inherit' }} />
+              </div>
+            </div>
+          )}
+
+          {mobileViewMode === 'markdown' && (
+            <div className="flex-1 flex flex-col bg-gray-950 overflow-hidden relative">
+              <div className="flex items-center justify-end gap-2 p-2 border-b border-gray-800 bg-gray-900/50 flex-shrink-0">
+                <button
+                  onClick={handleCopy}
+                  className="px-3 py-1 text-xs font-bold rounded bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                >
+                  {copied ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="px-3 py-1 text-xs font-bold rounded bg-gray-850 hover:bg-gray-800 text-gray-300 cursor-pointer"
+                >
+                  Download
+                </button>
+              </div>
+              <div className="flex-1 p-4 overflow-hidden relative h-full">
+                <textarea
+                  value={localMarkdown}
+                  onChange={(e) => setLocalMarkdown(e.target.value)}
+                  className="w-full h-full font-mono text-xs text-slate-300 bg-transparent resize-none border-none outline-none focus:ring-0 leading-relaxed custom-editor-scrollbar overflow-y-auto raw-markdown-editor"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );

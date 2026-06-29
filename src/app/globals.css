@@ -243,3 +243,50 @@ body.theme-gradient .theme-preview-container blockquote {
   animation: pulse-glow 4s ease-in-out infinite;
 }
 
+/* Multi-Panel Resizable layout styles */
+.cursor-col-resize {
+  cursor: col-resize;
+}
+
+.custom-editor-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-editor-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-editor-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.25);
+  border-radius: 3px;
+}
+.custom-editor-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.45);
+}
+
+/* Neon styled monospaced theme overrides for the raw output textarea */
+body.theme-terminal .raw-markdown-editor {
+  background-color: #030303 !important;
+  color: #39ff14 !important;
+  border-color: #1f8b0c !important;
+}
+body.theme-terminal .raw-markdown-editor::selection {
+  background-color: #39ff14;
+  color: #000000;
+}
+
+body.theme-gradient .raw-markdown-editor {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  color: #e2e8f0 !important;
+}
+
+body.theme-dark .raw-markdown-editor {
+  background-color: #0c0c0e !important;
+  color: #f1f5f9 !important;
+}
+
+body.theme-minimal .raw-markdown-editor {
+  background-color: #fafafa !important;
+  color: #1a1a1a !important;
+}
+
+
